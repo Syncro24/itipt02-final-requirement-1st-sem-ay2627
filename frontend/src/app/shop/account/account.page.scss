@@ -1,0 +1,359 @@
+// Tokens are also set on ion-modal: Ionic moves open modals out of the page host,
+// so variables defined only on :host would not reach the modal content.
+:host,
+ion-modal {
+  --brand: #2563eb;
+  --brand-strong: #1d4ed8;
+  --brand-soft: #eaf1ff;
+  --danger: #dc2626;
+  --success: #047857;
+  --success-soft: #d1fae5;
+
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --border: #e6e9ee;
+  --text: #16191d;
+  --text-muted: #5f6873;
+  --text-faint: #8a929c;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :host,
+  ion-modal {
+    --brand: #4f8cff;
+    --brand-strong: #7aa7ff;
+    --brand-soft: #1b2a47;
+    --danger: #f87171;
+    --success: #34d399;
+    --success-soft: #12342a;
+
+    --bg: #0f1216;
+    --surface: #181c22;
+    --border: #272d36;
+    --text: #f1f3f6;
+    --text-muted: #a3acb8;
+    --text-faint: #7b8490;
+    --shadow-card: none;
+  }
+}
+
+// Hover overlays in Ionic buttons/items are painted ABOVE the text. Keep their
+// opacity low (never 1) or the label disappears on hover.
+
+// ---------- Page ----------
+ion-header ion-toolbar {
+  --background: var(--bg);
+  --color: var(--text);
+  --border-width: 0;
+}
+
+ion-content {
+  --background: var(--bg);
+  --color: var(--text);
+}
+
+// ---------- Identity ----------
+.identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 8px;
+  text-align: center;
+
+  .tile--xl {
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+    color: #ffffff;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+  }
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  p {
+    margin: 0 0 14px;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    word-break: break-all;
+  }
+
+  .edit-btn {
+    --color: var(--brand);
+    --border-color: var(--border);
+    --background-hover: var(--brand);
+    --background-hover-opacity: 0.1;
+    --background-activated: var(--brand);
+    --background-activated-opacity: 0.16;
+    font-weight: 600;
+    text-transform: none;
+    transition: transform 0.15s ease;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-1px);
+        --border-color: var(--brand);
+      }
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+}
+
+// ---------- Section titles ----------
+.section-title {
+  margin: 28px 20px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+// ---------- Card lists ----------
+.card-list {
+  margin: 0 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+
+  ion-item {
+    --background: var(--surface);
+    --background-hover: var(--brand);
+    --background-hover-opacity: 0.06;
+    --background-activated: var(--brand);
+    --background-activated-opacity: 0.1;
+    --border-color: var(--border);
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --min-height: 60px;
+    --color: var(--text);
+
+    ion-label {
+      h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      p {
+        margin-top: 2px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+    }
+  }
+
+  .tile {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    margin-inline-end: 14px;
+    border-radius: 10px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-size: 1.2rem;
+  }
+}
+
+// ---------- Order row (for when real orders are listed) ----------
+.order-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+
+  strong {
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+}
+
+.pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  &--completed {
+    background: var(--success-soft);
+    color: var(--success);
+  }
+}
+
+// ---------- Logout ----------
+.logout {
+  --border-radius: 14px;
+  --border-color: var(--danger);
+  --border-width: 1.5px;
+  --color: var(--danger);
+  --background-hover: var(--danger);
+  --background-hover-opacity: 0.1;
+  --background-activated: var(--danger);
+  --background-activated-opacity: 0.16;
+  margin: 32px 16px 40px;
+  height: 50px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: transform 0.15s ease;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// ---------- Profile modal ----------
+.close-btn {
+  --color: var(--text-muted);
+  --background-hover: var(--text);
+  --background-hover-opacity: 0.08;
+}
+
+.modal-body {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-top: 8px;
+}
+
+// Read-only view
+.info-list {
+  margin: 0 0 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+
+  .info-row {
+    padding: 14px 16px;
+
+    & + .info-row {
+      border-top: 1px solid var(--border);
+    }
+  }
+
+  dt {
+    margin-bottom: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text);
+    word-break: break-all;
+  }
+}
+
+// Edit form
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  ion-input {
+    --border-radius: 12px;
+    --border-color: var(--border);
+    --highlight-color-focused: var(--brand);
+    --color: var(--text);
+    --padding-start: 14px;
+    --padding-end: 14px;
+    min-height: 52px;
+    font-size: 1rem;
+  }
+}
+
+// Modal buttons
+.primary-btn {
+  --background: var(--brand);
+  --background-hover: var(--brand-strong);
+  --background-activated: var(--brand-strong);
+  --color: #ffffff;
+  --box-shadow: none;
+  margin: 8px 0 0;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-1px);
+      --box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.secondary-btn {
+  --color: var(--text-muted);
+  --border-color: var(--border);
+  --border-width: 1.5px;
+  --background-hover: var(--text);
+  --background-hover-opacity: 0.06;
+  margin: 0;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+// ---------- Accessibility ----------
+.edit-btn:focus-visible,
+.logout:focus-visible,
+.primary-btn:focus-visible,
+.secondary-btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edit-btn,
+  .logout,
+  .primary-btn {
+    transition: none;
+
+    &:hover,
+    &:active {
+      transform: none;
+    }
+  }
+}

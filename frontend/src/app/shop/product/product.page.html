@@ -1,0 +1,50 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/shop/home" text=""></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Static Product Art / Icon -->
+  <div class="art">
+    <ion-icon name="hardware-chip-outline" aria-hidden="true"></ion-icon>
+  </div>
+
+  <!-- Static Product Info Body -->
+  <div class="body">
+    <span class="pill pill--shipped">Electronics</span>
+    <h1>Sample Product</h1>
+    <p class="price">$29.99</p>
+    <p class="stock stock--in">In Stock</p>
+    <p class="desc">This is a high-performance sample product built to test your app's layout and styling structure.</p>
+  </div>
+
+  <!-- Alternative Empty State (Uncomment to test "Not Found" view) -->
+  <!--
+  <div class="empty">
+    <h3>Product not found</h3>
+    <p>It may have been removed from the store.</p>
+    <ion-button>Browse products</ion-button>
+  </div>
+  -->
+</ion-content>
+
+<!-- Static Footer with Quantity Stepper & Add to Cart -->
+<ion-footer class="ion-no-border">
+  <ion-toolbar>
+    <div class="bar">
+      <div class="stepper" role="group" aria-label="Quantity">
+        <ion-button fill="clear" size="small" aria-label="Decrease quantity">
+          <ion-icon slot="icon-only" name="remove-outline" aria-hidden="true"></ion-icon>
+        </ion-button>
+        <span class="stepper__qty">1</span>
+        <ion-button fill="clear" size="small" aria-label="Increase quantity">
+          <ion-icon slot="icon-only" name="add-outline" aria-hidden="true"></ion-icon>
+        </ion-button>
+      </div>
+      <ion-button class="bar__add">Add to cart for $29.99</ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

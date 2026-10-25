@@ -1,0 +1,75 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Explore Products</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <!-- Modern Searchbar -->
+    <ion-searchbar 
+      placeholder="Search name or description..." 
+      [value]="searchQuery()"
+      (ionInput)="handleSearch($event)" 
+      [debounce]="300">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Category Filters Segment (Pill Style) -->
+  <ion-segment
+    class="filters"
+    [scrollable]="true"
+    [(ngModel)]="selectedCategory"
+  >
+    <ion-segment-button value="All">
+      <ion-label>All</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="Electronics">
+      <ion-label>Electronics</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="Accessories">
+      <ion-label>Accessories</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Product Section -->
+  @if (filteredItems().length > 0) {
+    <div class="product-container">
+      @for (item of visibleItems(); track item.ITEM_ID) {
+      <ion-card class="product-card">
+        <div class="card-body-wrapper">
+          <ion-card-header>
+            <ion-card-title>{{ item.ITEM_NAME }}</ion-card-title>
+            <ion-card-subtitle>
+              <strong>₱{{ item.ITEM_PRICE | number:'1.2-2' }}</strong>
+            </ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <p>{{ item.ITEM_DESCRIPTION }}</p>
+          </ion-card-content>
+        </div>
+        <ion-button expand="block" fill="solid">Buy Now</ion-button>
+      </ion-card>
+      }
+    </div>
+
+    <!-- Infinite Scroll Trigger -->
+    <ion-infinite-scroll
+      [disabled]="noMoreItems()"
+      (ionInfinite)="loadMore($event)"
+    >
+      <ion-infinite-scroll-content
+        loadingSpinner="bubbles"
+        loadingText="Loading more products..."
+      >
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  } @else {
+    <!-- Empty State View -->
+    <div class="empty">
+      <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
+      <h3>No products found</h3>
+      <p>Try checking your spelling or selecting a different category filter.</p>
+      <ion-button fill="clear" (click)="clearFilters()">Clear filters</ion-button>
+    </div>
+  }
+</ion-content>

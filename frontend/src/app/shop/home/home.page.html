@@ -1,0 +1,45 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>My Store</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense" class="ion-no-border">
+    <ion-toolbar>
+      <ion-title size="large">My Store</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Static Promo Banner -->
+  <section class="promo">
+    <h2>Free shipping over $100</h2>
+    <p>Order today and it ships the same day.</p>
+    <ion-button>Browse products</ion-button>
+  </section>
+
+  <!-- Static Categories Grid -->
+  <h2 class="section-title">Categories</h2>
+  <nav class="cats" aria-label="Categories">
+    <a class="cat">
+      <span class="tile"><ion-icon name="hardware-chip-outline" aria-hidden="true"></ion-icon></span>
+      <span class="cat__label">Electronics</span>
+    </a>
+    <a class="cat">
+      <span class="tile"><ion-icon name="flash-outline" aria-hidden="true"></ion-icon></span>
+      <span class="cat__label">Accessories</span>
+    </a>
+  </nav>
+
+  <!-- Static Featured Products Grid -->
+  <h2 class="section-title">Featured</h2>
+  <ul class="product-grid">
+    <li>
+      <!-- Static placeholder card -->
+      <div style="padding: 16px; border: 1px solid var(--ion-color-step-150, #ccc); border-radius: 8px;">
+        <h3>Sample Product</h3>
+        <p>$29.99</p>
+      </div>
+    </li>
+  </ul>
+</ion-content>

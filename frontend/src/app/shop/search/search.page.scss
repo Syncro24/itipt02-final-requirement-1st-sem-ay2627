@@ -1,0 +1,395 @@
+// ---------- Design tokens ----------
+:host {
+  --brand: #2563eb;
+  --brand-strong: #1d4ed8;
+  --brand-soft: #eaf1ff;
+  --price: #047857;
+
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --border: #e6e9ee;
+  --text: #16191d;
+  --text-muted: #5f6873;
+  --text-faint: #8a929c;
+
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-lift: 0 8px 24px rgba(16, 24, 40, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :host {
+    --brand: #4f8cff;
+    --brand-strong: #7aa7ff;
+    --brand-soft: #1b2a47;
+    --price: #34d399;
+
+    --bg: #0f1216;
+    --surface: #181c22;
+    --border: #272d36;
+    --text: #f1f3f6;
+    --text-muted: #a3acb8;
+    --text-faint: #7b8490;
+    --shadow-card: none;
+    --shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// ---------- Header ----------
+ion-toolbar {
+  --background: var(--surface);
+  --border-width: 0;
+  --color: var(--text);
+}
+
+.title-bar {
+  --min-height: 52px;
+
+  ion-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-align: left;
+    padding-inline: 20px;
+  }
+}
+
+.search-bar {
+  --min-height: 0;
+  padding: 0 4px 6px;
+}
+
+ion-searchbar {
+  --background: var(--bg);
+  --color: var(--text);
+  --placeholder-color: var(--text-faint);
+  --placeholder-opacity: 1;
+  --icon-color: var(--text-faint);
+  --border-radius: 12px;
+  --box-shadow: none;
+  --clear-button-color: var(--text-faint);
+  padding: 4px 12px;
+  height: 52px;
+  max-width: 640px;
+  margin: 0 auto;
+  font-size: 1rem; // 16px+ stops iOS zooming on focus
+}
+
+// ---------- Content ----------
+ion-content {
+  --background: var(--bg);
+}
+
+// ---------- Category pills ----------
+.filters-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.filters {
+  --background: transparent;
+  min-height: 0;
+  padding: 4px 16px 12px;
+  gap: 8px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  ion-segment-button {
+    --background: var(--bg);
+    --background-checked: var(--brand);
+    --background-hover: var(--brand-soft);
+    --background-focused: var(--brand-soft);
+    --color: var(--text-muted);
+    --color-checked: #ffffff;
+    --color-hover: var(--text);
+    --indicator-color: transparent;
+    --indicator-height: 0;
+    --border-radius: var(--radius-pill);
+    --border-width: 0;
+    --padding-start: 18px;
+    --padding-end: 18px;
+    min-height: 38px;
+    min-width: 0;
+    max-width: none;
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    ion-label {
+      margin: 0;
+    }
+
+    &::part(indicator),
+    &::part(indicator-background) {
+      display: none;
+    }
+
+    &.segment-button-checked {
+      --color: #ffffff;
+    }
+  }
+}
+
+.result-count {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 20px 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+// ---------- Product grid ----------
+.product-container {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); // 2-up on phones
+  gap: 12px;
+  padding: 12px 16px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    padding: 16px 20px 32px;
+  }
+}
+
+// ---------- Product card ----------
+.product-card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  height: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  .thumb {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    background: var(--brand-soft);
+    color: var(--brand);
+
+    ion-icon {
+      font-size: 44px;
+      opacity: 0.85;
+    }
+  }
+
+  .card-body-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    padding: 12px 14px 0;
+
+    @media (min-width: 768px) {
+      padding: 14px 16px 0;
+    }
+  }
+
+  .category-tag {
+    align-self: flex-start;
+    margin-bottom: 6px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  ion-card-header {
+    padding: 0;
+
+    ion-card-title {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 0.98rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--text);
+    }
+  }
+
+  ion-card-content {
+    padding: 6px 0 0;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+
+    p {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin: 0;
+    }
+  }
+
+  .card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 14px 14px;
+
+    @media (min-width: 768px) {
+      padding: 14px 16px 16px;
+    }
+  }
+
+  .price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--price);
+    font-variant-numeric: tabular-nums;
+
+    .currency {
+      margin-right: 1px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+  }
+
+  ion-button {
+    --background: var(--brand);
+    --background-hover: var(--brand-strong);
+    --background-activated: var(--brand-strong);
+    --color: #ffffff;
+    --box-shadow: none;
+    margin: 0;
+    height: 34px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-1px);
+        --box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+      }
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.97);
+      --box-shadow: none;
+    }
+  }
+}
+
+// ---------- Empty state ----------
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 72px 24px;
+  text-align: center;
+
+  .empty-icon {
+    display: grid;
+    place-items: center;
+    width: 88px;
+    height: 88px;
+    margin-bottom: 20px;
+    border-radius: 50%;
+    background: var(--brand-soft);
+    color: var(--brand);
+
+    ion-icon {
+      font-size: 40px;
+    }
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  p {
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  ion-button {
+    --color: var(--brand);
+    --border-color: var(--brand);
+    --border-width: 1.5px;
+    --background-hover: var(--brand);
+    --background-hover-opacity: 0.1;
+    --background-activated: var(--brand);
+    --background-activated-opacity: 0.16;
+    font-weight: 600;
+    text-transform: none;
+    transition: transform 0.15s ease;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-1px);
+      }
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+}
+
+// ---------- Accessibility ----------
+ion-segment-button:focus-visible,
+ion-button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .product-card ion-button,
+  .empty ion-button,
+  .filters ion-segment-button {
+    transition: none;
+  }
+
+  .product-card:hover,
+  .product-card:active,
+  .product-card ion-button:hover,
+  .product-card ion-button:active,
+  .empty ion-button:hover,
+  .empty ion-button:active {
+    transform: none;
+  }
+}

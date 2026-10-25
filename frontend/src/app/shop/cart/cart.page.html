@@ -1,0 +1,64 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Cart</ion-title>
+    <!-- Simplified static clear button -->
+    <ion-buttons slot="end">
+      <ion-button>Clear</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense" class="ion-no-border">
+    <ion-toolbar>
+      <ion-title size="large">Cart</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Static Cart Item List -->
+  <ion-list [inset]="true" lines="full">
+    <ion-item>
+      <span slot="start" class="tile">
+        <ion-icon name="hardware-chip-outline" aria-hidden="true"></ion-icon>
+      </span>
+      <ion-label>
+        <h3>Sample Product</h3>
+        <p>$29.99 each</p>
+      </ion-label>
+      
+      <!-- Simplified static stepper -->
+      <div slot="end" class="stepper" role="group">
+        <ion-button fill="clear" size="small">
+          <ion-icon slot="icon-only" name="remove-outline" aria-hidden="true"></ion-icon>
+        </ion-button>
+        <span class="stepper__qty">1</span>
+        <ion-button fill="clear" size="small">
+          <ion-icon slot="icon-only" name="add-outline" aria-hidden="true"></ion-icon>
+        </ion-button>
+      </div>
+    </ion-item>
+  </ion-list>
+
+  <!-- Static Free Shipping Hint -->
+  <p class="hint">Add $20.00 more for free shipping.</p>
+
+  <!-- Static Summary Section -->
+  <dl class="summary">
+    <div><dt>Subtotal</dt><dd>$29.99</dd></div>
+    <div><dt>Shipping</dt><dd>$5.00</dd></div>
+    <div class="summary__total"><dt>Total</dt><dd>$34.99</dd></div>
+  </dl>
+
+  <!-- Static Checkout Button -->
+  <ion-button class="checkout" expand="block">Place order for $34.99</ion-button>
+
+  <!-- Alternative Empty Cart State (Uncomment to test empty view) -->
+  <!--
+  <div class="empty">
+    <ion-icon name="cart-outline" aria-hidden="true"></ion-icon>
+    <h3>Your cart is empty</h3>
+    <p>Add a few products and they'll show up here.</p>
+    <ion-button>Browse products</ion-button>
+  </div>
+  -->
+</ion-content>
