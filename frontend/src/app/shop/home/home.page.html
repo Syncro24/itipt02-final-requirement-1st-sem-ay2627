@@ -1,45 +1,100 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>My Store</ion-title>
+  <ion-toolbar class="title-bar">
+    <ion-title>ShopApp</ion-title>
+  </ion-toolbar>
+  <ion-toolbar class="search-bar">
+    <!-- Tapping the searchbar opens the search tab -->
+    <ion-searchbar
+      placeholder="Search products"
+      readonly
+      (click)="goToSearch()"
+      aria-label="Open product search"
+    ></ion-searchbar>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense" class="ion-no-border">
-    <ion-toolbar>
-      <ion-title size="large">My Store</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <div class="page">
+    <!-- Promo banner -->
+    <ion-card class="banner-card">
+      <ion-card-content>
+        <span class="banner-tag">Limited time</span>
+        <h2>Mega Tech Sale</h2>
+        <p>Up to 50% off on selected electronics &amp; accessories.</p>
+        <ion-button class="banner-btn" size="small" shape="round" (click)="goToSearch()">
+          Shop now
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
 
-  <!-- Static Promo Banner -->
-  <section class="promo">
-    <h2>Free shipping over $100</h2>
-    <p>Order today and it ships the same day.</p>
-    <ion-button>Browse products</ion-button>
-  </section>
+    <!-- Categories -->
+    <h3 class="section-title">Categories</h3>
+    <div class="categories">
+      <button type="button" class="category" (click)="filterByCategory('Electronics')">
+        <span class="cat-icon"><ion-icon name="hardware-chip-outline" aria-hidden="true"></ion-icon></span>
+        <span class="cat-label">Electronics</span>
+      </button>
+      <button type="button" class="category" (click)="filterByCategory('Accessories')">
+        <span class="cat-icon"><ion-icon name="headset-outline" aria-hidden="true"></ion-icon></span>
+        <span class="cat-label">Accessories</span>
+      </button>
+      <button type="button" class="category" (click)="filterByCategory('All')">
+        <span class="cat-icon"><ion-icon name="grid-outline" aria-hidden="true"></ion-icon></span>
+        <span class="cat-label">All items</span>
+      </button>
+    </div>
 
-  <!-- Static Categories Grid -->
-  <h2 class="section-title">Categories</h2>
-  <nav class="cats" aria-label="Categories">
-    <a class="cat">
-      <span class="tile"><ion-icon name="hardware-chip-outline" aria-hidden="true"></ion-icon></span>
-      <span class="cat__label">Electronics</span>
-    </a>
-    <a class="cat">
-      <span class="tile"><ion-icon name="flash-outline" aria-hidden="true"></ion-icon></span>
-      <span class="cat__label">Accessories</span>
-    </a>
-  </nav>
+    <!-- Daily discover -->
+    <div class="section-row">
+      <h3 class="section-title">Daily discover</h3>
+      @if (items().length > 8) {
+        <button type="button" class="see-all" (click)="filterByCategory('All')">See all</button>
+      }
+    </div>
 
-  <!-- Static Featured Products Grid -->
-  <h2 class="section-title">Featured</h2>
-  <ul class="product-grid">
-    <li>
-      <!-- Static placeholder card -->
-      <div style="padding: 16px; border: 1px solid var(--ion-color-step-150, #ccc); border-radius: 8px;">
-        <h3>Sample Product</h3>
-        <p>$29.99</p>
+    @if (featuredItems().length > 0) {
+      <div class="products-grid">
+        @for (item of featuredItems(); track item.ITEM_ID) {
+          <ion-card class="product-card">
+            <div class="thumb" aria-hidden="true">
+              <ion-icon [name]="categoryIcon(item.ITEM_CATEGORY)"></ion-icon>
+            </div>
+
+            <div class="card-body">
+              <h4>{{ item.ITEM_NAME }}</h4>
+              <p class="description">{{ item.ITEM_DESCRIPTION }}</p>
+            </div>
+
+            <div class="card-footer">
+              <span class="price">
+                <span class="currency">₱</span>{{ item.ITEM_PRICE | number: '1.2-2' }}
+              </span>
+              <ion-button
+                size="small"
+                shape="round"
+                [attr.aria-label]="'Add ' + item.ITEM_NAME + ' to cart'"
+                [disabled]="addingItemId() === item.ITEM_ID"
+                (click)="addToCart(item)"
+              >
+                {{ addingItemId() === item.ITEM_ID ? 'Adding…' : 'Add' }}
+              </ion-button>
+            </div>
+          </ion-card>
+        }
       </div>
-    </li>
-  </ul>
+    } @else if (loaded()) {
+      <div class="empty">
+        <div class="empty-icon">
+          <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
+        </div>
+        <h3>{{ loadFailed() ? "Couldn't load products" : 'No products yet' }}</h3>
+        <p>
+          {{ loadFailed() ? 'Check your connection and try again.' : 'New products will show up here.' }}
+        </p>
+        @if (loadFailed()) {
+          <ion-button fill="outline" shape="round" (click)="loadItems()">Try again</ion-button>
+        }
+      </div>
+    }
+  </div>
 </ion-content>

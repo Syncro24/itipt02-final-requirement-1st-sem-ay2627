@@ -4,7 +4,7 @@ import bcrypt
 import mysql.connector
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 backend_data = FastAPI()
 
@@ -167,3 +167,148 @@ def login_user(credentials: LoginRequest):
         "name": f"{user['USER_FIRST_NAME']} {user['USER_LAST_NAME']}",
         "email": user["USER_EMAIL"],
     }
+
+
+# ---------- Cart ----------
+class CartAddRequest(BaseModel):
+    user_id: int
+    item_id: int
+    quantity: int = Field(1, ge=1, le=99)
+
+
+class CartQuantityUpdate(BaseModel):
+    quantity: int = Field(..., ge=1, le=99)
+
+
+@backend_data.get("/cart/{user_id}")
+def get_cart(user_id: int):
+    with db_cursor() as cursor:
+        cursor.execute(
+            """SELECT c.CART_ITEM_ID, c.ITEM_ID, c.QUANTITY,
+                      i.ITEM_NAME, i.ITEM_DESCRIPTION, i.ITEM_PRICE, i.ITEM_CATEGORY
+               FROM cart_items c
+               JOIN items i ON i.ITEM_ID = c.ITEM_ID
+               WHERE c.USER_ID = %s
+               ORDER BY c.CART_ITEM_ID DESC""",
+            (user_id,),
+        )
+        rows = cursor.fetchall()
+    return {"cart": rows}
+
+
+@backend_data.post("/cart")
+def add_to_cart(data: CartAddRequest):
+    with db_cursor(commit=True) as cursor:
+        cursor.execute(
+            "SELECT ITEM_ID FROM items WHERE ITEM_ID = %s AND ITEM_STATUS = 'Approved'",
+            (data.item_id,),
+        )
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        # One row per user+item: adding it again increases the quantity
+        cursor.execute(
+            """INSERT INTO cart_items (USER_ID, ITEM_ID, QUANTITY)
+               VALUES (%s, %s, %s)
+               ON DUPLICATE KEY UPDATE QUANTITY = LEAST(QUANTITY + VALUES(QUANTITY), 99)""",
+            (data.user_id, data.item_id, data.quantity),
+        )
+    return {"message": "Added to cart"}
+
+
+@backend_data.put("/cart/{cart_item_id}")
+def update_cart_quantity(cart_item_id: int, data: CartQuantityUpdate):
+    with db_cursor(commit=True) as cursor:
+        cursor.execute(
+            "UPDATE cart_items SET QUANTITY = %s WHERE CART_ITEM_ID = %s",
+            (data.quantity, cart_item_id),
+        )
+    return {"message": "Quantity updated"}
+
+
+@backend_data.delete("/cart/{cart_item_id}")
+def remove_cart_item(cart_item_id: int):
+    with db_cursor(commit=True) as cursor:
+        cursor.execute("DELETE FROM cart_items WHERE CART_ITEM_ID = %s", (cart_item_id,))
+    return {"message": "Item removed"}
+
+
+# ---------- Cart ----------
+class CartAddRequest(BaseModel):
+    user_id: int
+    item_id: int
+    quantity: int = 1
+
+
+class CartUpdateRequest(BaseModel):
+    quantity: int
+
+
+@backend_data.get("/cart/{user_id}")
+def get_cart_items(user_id: int):
+    with db_cursor() as cursor:
+        cursor.execute(
+            """SELECT c.CART_ITEM_ID, c.QUANTITY,
+                      i.ITEM_ID, i.ITEM_NAME, i.ITEM_PRICE, i.ITEM_CATEGORY
+               FROM cart_items c
+               JOIN items i ON c.ITEM_ID = i.ITEM_ID
+               WHERE c.USER_ID = %s
+               ORDER BY c.CART_ITEM_ID DESC""",
+            (user_id,),  # the trailing comma makes this a tuple
+        )
+        items = cursor.fetchall()
+    return {"cart": items}
+
+
+@backend_data.post("/cart")
+def add_to_cart(data: CartAddRequest):
+    if data.quantity < 1:
+        raise HTTPException(status_code=400, detail="Quantity must be at least 1")
+
+    with db_cursor(commit=True) as cursor:
+        cursor.execute(
+            "SELECT ITEM_ID FROM items WHERE ITEM_ID = %s AND ITEM_STATUS = 'Approved'",
+            (data.item_id,),
+        )
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        cursor.execute(
+            "SELECT CART_ITEM_ID, QUANTITY FROM cart_items WHERE USER_ID = %s AND ITEM_ID = %s",
+            (data.user_id, data.item_id),
+        )
+        existing = cursor.fetchone()
+
+        if existing:
+            # Already in the cart: keep the current quantity instead of doubling it.
+            # (Quantity is changed with the +/- stepper in the cart.)
+            return {"message": "Item is already in your cart", "already_in_cart": True}
+
+        # The UNIQUE (USER_ID, ITEM_ID) key makes this safe even if two requests
+        # arrive at the same moment: the second one becomes a harmless no-op.
+        cursor.execute(
+            """INSERT INTO cart_items (USER_ID, ITEM_ID, QUANTITY) VALUES (%s, %s, %s)
+               ON DUPLICATE KEY UPDATE CART_ITEM_ID = CART_ITEM_ID""",
+            (data.user_id, data.item_id, data.quantity),
+        )
+    return {"message": "Item added to cart successfully", "already_in_cart": False}
+
+
+@backend_data.put("/cart/{cart_item_id}")
+def update_cart_quantity(cart_item_id: int, data: CartUpdateRequest):
+    with db_cursor(commit=True) as cursor:
+        if data.quantity <= 0:
+            cursor.execute("DELETE FROM cart_items WHERE CART_ITEM_ID = %s", (cart_item_id,))
+        else:
+            cursor.execute(
+                "UPDATE cart_items SET QUANTITY = %s WHERE CART_ITEM_ID = %s",
+                (data.quantity, cart_item_id),
+            )
+    return {"message": "Cart updated successfully"}
+
+
+@backend_data.delete("/cart/{cart_item_id}")
+def remove_cart_item(cart_item_id: int):
+    with db_cursor(commit=True) as cursor:
+        cursor.execute("DELETE FROM cart_items WHERE CART_ITEM_ID = %s", (cart_item_id,))
+    return {"message": "Item removed from cart"}

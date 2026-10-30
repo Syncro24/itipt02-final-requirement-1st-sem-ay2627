@@ -29,10 +29,6 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'product/:id',
-    loadComponent: () => import('./shop/product/product.page').then((m) => m.ProductPage),
-  },
-  {
     path: 'auth',
     loadComponent: () => import('./auth/auth.page').then( m => m.AuthPage)
   },

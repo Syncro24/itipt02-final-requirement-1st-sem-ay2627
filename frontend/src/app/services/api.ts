@@ -34,4 +34,24 @@ export class ApiService {
   }) {
     return this.http.post(`${this.apiUrl}/signup`, data);
   }
+
+  getCart(userId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/cart/${userId}`);
+  }
+
+  addToCart(payload: {
+    user_id: number;
+    item_id: number;
+    quantity: number;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/cart`, payload);
+  }
+
+  updateCartQuantity(cartItemId: number, quantity: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/cart/${cartItemId}`, { quantity });
+  }
+
+  removeCartItem(cartItemId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/cart/${cartItemId}`);
+  }
 }

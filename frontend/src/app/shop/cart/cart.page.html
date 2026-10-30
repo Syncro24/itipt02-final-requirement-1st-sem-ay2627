@@ -1,64 +1,96 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>Cart</ion-title>
-    <!-- Simplified static clear button -->
-    <ion-buttons slot="end">
-      <ion-button>Clear</ion-button>
-    </ion-buttons>
+  <ion-toolbar class="title-bar">
+    <ion-title>My cart</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense" class="ion-no-border">
-    <ion-toolbar>
-      <ion-title size="large">Cart</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <!-- Static Cart Item List -->
-  <ion-list [inset]="true" lines="full">
-    <ion-item>
-      <span slot="start" class="tile">
-        <ion-icon name="hardware-chip-outline" aria-hidden="true"></ion-icon>
-      </span>
-      <ion-label>
-        <h3>Sample Product</h3>
-        <p>$29.99 each</p>
-      </ion-label>
-      
-      <!-- Simplified static stepper -->
-      <div slot="end" class="stepper" role="group">
-        <ion-button fill="clear" size="small">
-          <ion-icon slot="icon-only" name="remove-outline" aria-hidden="true"></ion-icon>
-        </ion-button>
-        <span class="stepper__qty">1</span>
-        <ion-button fill="clear" size="small">
-          <ion-icon slot="icon-only" name="add-outline" aria-hidden="true"></ion-icon>
-        </ion-button>
+  @if (cartItems().length === 0) {
+    <div class="empty">
+      <div class="empty-icon">
+        <ion-icon name="cart-outline" aria-hidden="true"></ion-icon>
       </div>
-    </ion-item>
-  </ion-list>
+      <h3>Your cart is empty</h3>
+      <p>Explore products and add them to your cart.</p>
+      <ion-button fill="outline" shape="round" routerLink="/search">Shop now</ion-button>
+    </div>
+  } @else {
+    <p class="result-count" aria-live="polite">
+      {{ cartItems().length }} {{ cartItems().length === 1 ? 'item' : 'items' }}
+    </p>
 
-  <!-- Static Free Shipping Hint -->
-  <p class="hint">Add $20.00 more for free shipping.</p>
+    <div class="cart-list">
+      @for (item of cartItems(); track item.ITEM_ID) {
+        <ion-card class="cart-item" [class.is-selected]="item.selected">
+          <ion-checkbox
+            class="select"
+            [checked]="item.selected"
+            (ionChange)="toggleItem(item.CART_ITEM_ID, $event.detail.checked)"
+            [attr.aria-label]="'Select ' + item.ITEM_NAME"
+          ></ion-checkbox>
 
-  <!-- Static Summary Section -->
-  <dl class="summary">
-    <div><dt>Subtotal</dt><dd>$29.99</dd></div>
-    <div><dt>Shipping</dt><dd>$5.00</dd></div>
-    <div class="summary__total"><dt>Total</dt><dd>$34.99</dd></div>
-  </dl>
+          <div class="thumb" aria-hidden="true">
+            <ion-icon [name]="categoryIcon(item.ITEM_CATEGORY)"></ion-icon>
+          </div>
 
-  <!-- Static Checkout Button -->
-  <ion-button class="checkout" expand="block">Place order for $34.99</ion-button>
+          <div class="info">
+            <h3>{{ item.ITEM_NAME }}</h3>
+            <p class="unit-price">₱{{ item.ITEM_PRICE | number: '1.2-2' }} each</p>
 
-  <!-- Alternative Empty Cart State (Uncomment to test empty view) -->
-  <!--
-  <div class="empty">
-    <ion-icon name="cart-outline" aria-hidden="true"></ion-icon>
-    <h3>Your cart is empty</h3>
-    <p>Add a few products and they'll show up here.</p>
-    <ion-button>Browse products</ion-button>
-  </div>
-  -->
+            <div class="info-bottom">
+              <div class="stepper" role="group" [attr.aria-label]="'Quantity for ' + item.ITEM_NAME">
+                <button type="button" aria-label="Decrease quantity" (click)="changeQty(item, -1)">
+                  <ion-icon name="remove-outline"></ion-icon>
+                </button>
+                <span class="qty" aria-live="polite">{{ item.QUANTITY }}</span>
+                <button type="button" aria-label="Increase quantity" (click)="changeQty(item, 1)">
+                  <ion-icon name="add-outline"></ion-icon>
+                </button>
+              </div>
+
+              <span class="line-total">₱{{ item.ITEM_PRICE * item.QUANTITY | number: '1.2-2' }}</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="remove"
+            [attr.aria-label]="'Remove ' + item.ITEM_NAME"
+            (click)="removeItem(item.CART_ITEM_ID)"
+          >
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </ion-card>
+      }
+    </div>
+  }
 </ion-content>
+
+@if (cartItems().length > 0) {
+  <ion-footer class="ion-no-border">
+    <div class="checkout-bar">
+      <ion-checkbox
+        class="select-all"
+        labelPlacement="end"
+        [checked]="allSelected()"
+        (ionChange)="toggleSelectAll($event.detail.checked)"
+      >
+        All
+      </ion-checkbox>
+
+      <div class="totals">
+        <span class="total-label">Total</span>
+        <span class="total-amount">₱{{ totalPrice() | number: '1.2-2' }}</span>
+      </div>
+
+      <ion-button
+        class="checkout-btn"
+        shape="round"
+        [disabled]="selectedCount() === 0"
+        (click)="checkout()"
+      >
+        Checkout ({{ selectedCount() }})
+      </ion-button>
+    </div>
+  </ion-footer>
+}

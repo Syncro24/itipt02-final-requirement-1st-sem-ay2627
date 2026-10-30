@@ -1,8 +1,9 @@
 import { Component, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { searchOutline } from 'ionicons/icons';
+import { cubeOutline, hardwareChipOutline, headsetOutline, searchOutline } from 'ionicons/icons';
 import {
   IonButton,
   IonCard,
@@ -23,6 +24,7 @@ import {
   IonSegmentButton,
   IonTitle,
   IonToolbar,
+  ToastController,
 } from '@ionic/angular';
 import { ApiService } from '../../services/api';
 
@@ -55,77 +57,111 @@ import { ApiService } from '../../services/api';
   ],
 })
 export class SearchPage {
-  //Variables
+  // Variables
   items = signal<any[]>([]);
   selectedCategory = signal<string>('All');
   displayLimit = signal<number>(10);
   searchQuery = signal<string>('');
+  addingItemId = signal<number | null>(null); // item currently being added to the cart
 
-  constructor(private apiServices: ApiService) {
+  constructor(
+    private apiServices: ApiService,
+    private router: Router,
+    private toastController: ToastController,
+  ) {
     effect(() => {
       this.selectedCategory();
-      this.displayLimit.set(10);
       this.searchQuery();
+      this.displayLimit.set(10);
     });
-    addIcons({
-      searchOutline
-    })
+    addIcons({ searchOutline, hardwareChipOutline, headsetOutline, cubeOutline });
   }
 
-  //Item filtering and search query
+  // Item filtering and search query
   filteredItems = computed(() => {
     const category = this.selectedCategory();
     const allItems = this.items();
     const query = this.searchQuery().toLowerCase().trim();
-    // if (category === 'All'){
-    //   return allItems;
-    // }
 
     return allItems.filter((item) => {
-      // (item.ITEM_CATEGORY || '').toLowerCase() === category.toLowerCase()
       const matchesCategory =
-        category === 'All' ||
-        (item.ITEM_CATEGORY || '').toLowerCase() === category.toLowerCase();
+        category === 'All' || (item.ITEM_CATEGORY || '').toLowerCase() === category.toLowerCase();
 
       const name = (item.ITEM_NAME || '').toLowerCase();
       const description = (item.ITEM_DESCRIPTION || '').toLowerCase();
-      const matchesSearch =
-        query === '' || name.includes(query) || description.includes(query);
+      const matchesSearch = query === '' || name.includes(query) || description.includes(query);
 
       return matchesCategory && matchesSearch;
     });
   });
 
   handleSearch(event: any) {
-    const query = event.target.value ?? '';
-    this.searchQuery.set(query);
+    this.searchQuery.set(event.target.value ?? '');
   }
 
-  // Clear filters action
   clearFilters() {
     this.selectedCategory.set('All');
     this.searchQuery.set('');
   }
-  
-  //Infinite Scrolling
-  visibleItems = computed(() => {
-    return this.filteredItems().slice(0, this.displayLimit());
-  });
-  noMoreItems = computed(() => {
-    return this.displayLimit() >= this.filteredItems().length;
-  });
+
+  // Infinite scrolling
+  visibleItems = computed(() => this.filteredItems().slice(0, this.displayLimit()));
+  noMoreItems = computed(() => this.displayLimit() >= this.filteredItems().length);
+
   loadMore(event: any) {
     setTimeout(() => {
       this.displayLimit.update((current) => current + 10);
       event.target.complete();
-
-      if (this.displayLimit() >= this.filteredItems().length) {
-        event.target.disable = true;
-      }
     }, 400);
   }
 
-  //Item Fetching
+  // Buy now: add to the logged-in user's cart and confirm with a toast (stay on this page)
+  buyNow(item: any) {
+    const userId = Number(localStorage.getItem('user_id'));
+    if (!Number.isInteger(userId) || userId <= 0) {
+      this.showToast('Please sign in to buy items.', 'danger');
+      this.router.navigateByUrl('/auth');
+      return;
+    }
+
+    if (this.addingItemId() !== null) return; // ignore double taps
+    this.addingItemId.set(item.ITEM_ID);
+
+    this.apiServices
+      .addToCart({ user_id: userId, item_id: item.ITEM_ID, quantity: 1 })
+      .subscribe({
+        next: (res: any) => {
+          this.addingItemId.set(null);
+          this.showToast(
+            res?.already_in_cart
+              ? `${item.ITEM_NAME} is already in your cart.`
+              : `${item.ITEM_NAME} added to cart!`,
+            'success',
+            true,
+          );
+        },
+        error: (err: any) => {
+          console.error('Failed to add to cart', err);
+          this.addingItemId.set(null);
+          this.showToast('Could not add the item to your cart.', 'danger');
+        },
+      });
+  }
+
+  private async showToast(message: string, color: 'success' | 'danger', withViewCart = false) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color,
+      position: 'top',
+      buttons: withViewCart
+        ? [{ text: 'View cart', handler: () => this.router.navigateByUrl('/cart') }]
+        : [],
+    });
+    await toast.present();
+  }
+
+  // Item fetching
   ionViewWillEnter() {
     this.loadItems();
   }
