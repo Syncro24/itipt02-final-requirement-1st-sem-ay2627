@@ -35,3 +35,22 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+ion-tabs ion-content::part(scroll) {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes tab-page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+ion-tabs ion-router-outlet > .ion-page:not(.ion-page-hidden) {
+  animation: tab-page-in 0.25s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ion-tabs ion-router-outlet > .ion-page {
+    animation: none;
+  }
+}

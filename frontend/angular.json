@@ -73,6 +73,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": [".ngrok-free.dev", ".ngrok-free.app", "localhost"]
+          },
           "configurations": {
             "production": {
               "buildTarget": "app:build:production"
@@ -115,9 +118,7 @@
     }
   },
   "cli": {
-    "schematicCollections": [
-      "@ionic/angular-toolkit"
-    ],
+    "schematicCollections": ["@ionic/angular-toolkit"],
     "analytics": false
   },
   "schematics": {
