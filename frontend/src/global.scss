@@ -54,3 +54,32 @@ ion-tabs ion-router-outlet > .ion-page:not(.ion-page-hidden) {
     animation: none;
   }
 }
+
+:root {
+  /* tab bar height (56) + its bottom margin (8) + a gap (8) */
+  --tab-bar-space: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Lift page footers (like the cart's checkout bar) above the floating tab bar */
+ion-tabs ion-footer {
+  margin: 0 12px var(--tab-bar-space);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.14),
+    0 0 0 1px var(--ion-border-color, rgba(0, 0, 0, 0.06));
+}
+
+ion-tabs ion-footer::before {
+  display: none;
+}
+
+ion-tabs ion-footer ion-toolbar {
+  --background: var(--ion-item-background, var(--ion-background-color, #fff));
+  --border-width: 0;
+}
+
+/* Pages with a footer already end above the tab bar, so skip the extra scroll padding */
+ion-tabs .ion-page:has(> ion-footer) ion-content::part(scroll) {
+  padding-bottom: 0;
+}
