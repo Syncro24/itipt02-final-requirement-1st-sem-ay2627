@@ -1,55 +1,102 @@
-# E-Commerce Storefront
+<div align="center">
 
-A mobile-friendly e-commerce storefront built with an Ionic/Angular frontend, a FastAPI backend, and a MariaDB/MySQL database. Users can create accounts and sign in, browse and search approved products, add products to a cart, adjust cart quantities, and edit their profile.
+# 🛍️ E-Commerce Storefront
 
-> Project status: checkout currently shows a success message in the frontend but does not create or process a real order.
+### A mobile-friendly online shop for discovering products, managing a cart, and placing orders.
 
-## Tech stack
+Built with **Ionic + Angular**, **FastAPI**, and **MariaDB/MySQL**.
 
-- Frontend: Angular 22, Ionic 9, TypeScript, SCSS, and Capacitor
-- Backend: Python, FastAPI, Uvicorn, Pydantic, MySQL Connector/Python, and bcrypt
-- Database: MariaDB/MySQL
+[✨ Features](#-features) · [🧰 Tech stack](#-tech-stack) · [🚀 Run locally](#-run-locally) · [🔌 API](#-api-overview)
 
-## Repository layout
+</div>
+
+---
+
+## 🌟 About the project
+
+E-Commerce Storefront is a full-stack shopping application with customer and admin experiences. Customers can browse approved products, create an account, manage their cart, and place or cancel pending orders. Admins can manage the product catalog and review and update orders.
+
+> 📌 **Checkout creates an order with `Pending` status.** The application does not process payments.
+
+## ✨ Features
+
+### 🛒 Customer storefront
+- Browse approved products and search or filter by category
+- Sign up, log in, and manage account details
+- Add products to a cart, update quantities, and remove items
+- Check out selected cart items or the whole cart
+- View order history and cancel orders that are still pending
+
+### 🧑‍💼 Admin tools
+- Admin sign-in
+- Create, update, and archive products
+- View orders and change pending orders to approved or cancelled
+
+### 📱 Application experience
+- Responsive Ionic interface for mobile-friendly shopping
+- FastAPI backend with interactive API documentation
+- MariaDB/MySQL database schema and sample data included
+
+## 🧰 Tech stack
+
+| Area | Technologies |
+| --- | --- |
+| Frontend | Angular 22, Ionic 9, TypeScript, SCSS, Capacitor |
+| Backend | Python, FastAPI, Uvicorn, Pydantic, bcrypt |
+| Database | MariaDB / MySQL |
+
+### 📊 Repository languages
+
+```mermaid
+pie showData
+    title Language composition
+    "TypeScript" : 39.7
+    "SCSS" : 25.7
+    "HTML" : 23.1
+    "Python" : 11
+    "JavaScript" : 0.5
+```
+
+## 🗂️ Project structure
 
 ```text
 .
 ├── backend/
-│   └── backend.py       # FastAPI application and API endpoints
-├── ecommerce_db.sql     # Database schema and sample data
+│   └── backend.py             # FastAPI app, database access, and API routes
+├── ecommerce_db.sql          # Database schema and sample data
 └── frontend/
-    ├── package.json     # Frontend dependencies and npm scripts
+    ├── package.json           # Frontend dependencies and npm scripts
     └── src/app/
-        ├── auth/        # Sign-in and sign-up
-        ├── services/    # Shared HTTP API client
+        ├── auth/              # Customer sign-in and sign-up
+        ├── services/          # Shared API client
         └── shop/
-            ├── home/    # Featured products
-            ├── search/  # Product search and category filters
-            ├── cart/    # Cart management
-            ├── account/ # Profile and logout
-            └── tab/     # Store navigation
+            ├── home/          # Featured products
+            ├── search/        # Product search and category filters
+            ├── cart/          # Cart management
+            ├── account/       # Profile and logout
+            └── tab/           # Store navigation
 ```
 
-## Prerequisites
+## 🚀 Run locally
 
-- Python 3 and pip
-- Node.js and npm
+### Prerequisites
+
+- Python 3 and `pip`
+- Node.js and `npm`
 - A running MariaDB or MySQL server
 
-## Setup and run
+### 1. Set up the database 🗄️
 
-### 1. Set up the database
-
-Create the database and import the provided schema/data:
+From the repository root, create the database and import the included schema and sample data:
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE ecommerce_db;"
 mysql -u root -p ecommerce_db < ecommerce_db.sql
 ```
 
-The SQL dump is designed for MariaDB/MySQL. If the database already exists, skip the creation step.
+If `ecommerce_db` already exists, skip the creation command.
 
-### 2. Start the backend
+### 2. Install and start the backend 🐍
 
 From the repository root:
 
@@ -60,19 +107,13 @@ pip install fastapi uvicorn mysql-connector-python bcrypt
 uvicorn backend.backend:backend_data --reload
 ```
 
-The backend listens on `http://127.0.0.1:8000` by default. FastAPI docs are available at `http://127.0.0.1:8000/docs`.
+The API runs at **http://127.0.0.1:8000**. Open **http://127.0.0.1:8000/docs** for interactive FastAPI documentation.
 
-The database connection is hard-coded in `backend/backend.py` for:
-- Host: `localhost`
-- User: `root`
-- Password: empty string
-- Database: `ecommerce_db`
+The database connection settings are currently defined in `backend/backend.py` (default: host `localhost`, user `root`, empty password, database `ecommerce_db`). Update them to match your local MySQL/MariaDB configuration.
 
-Update it to match your local database config if needed.
+### 3. Install and start the frontend 📱
 
-### 3. Start the frontend
-
-In a separate terminal:
+In another terminal:
 
 ```bash
 cd frontend
@@ -80,37 +121,53 @@ npm install
 npm start
 ```
 
-The frontend API base URL is hard-coded in `frontend/src/app/services/api.ts` as `http://127.0.0.1:8000`.
+The Angular development server will print its local address when it starts. The API base URL is currently set to `http://127.0.0.1:8000` in `frontend/src/app/services/api.ts`.
 
-## Available frontend scripts
+### 🧪 Frontend commands
 
-From `frontend/`:
+Run these from `frontend/`:
 
-```bash
-npm start
-npm run build
-npm test
-npm run lint
-```
+| Command | Description |
+| --- | --- |
+| `npm start` | Start the development server |
+| `npm run build` | Build the frontend |
+| `npm test` | Run frontend tests |
+| `npm run lint` | Lint the frontend |
 
-## Main API routes
+## 🔌 API overview
 
-| Method | Route | Purpose |
+| Method | Route | Description |
 | --- | --- | --- |
-| GET | `/items` | List approved products |
-| POST | `/signup` | Create an account |
-| POST | `/login` | Authenticate an account |
-| GET | `/accounts/{user_id}` | Retrieve a profile |
-| PUT | `/accounts/{user_id}` | Update a profile |
-| GET | `/cart/{user_id}` | Retrieve a user's cart |
-| POST | `/cart` | Add a product to a cart |
-| PUT | `/cart/{cart_item_id}` | Update cart quantity |
-| DELETE | `/cart/{cart_item_id}` | Remove a cart item |
+| `GET` | `/items` | List approved products |
+| `POST` | `/signup` | Create a customer account |
+| `POST` | `/login` | Authenticate a customer |
+| `GET` / `PUT` | `/accounts/{user_id}` | Retrieve or update a profile |
+| `GET` | `/cart/{user_id}` | Retrieve a customer's cart |
+| `POST` | `/cart` | Add a product to a cart |
+| `PUT` | `/cart/{cart_item_id}` | Update cart quantity |
+| `DELETE` | `/cart/{cart_item_id}` | Remove a cart item |
+| `POST` | `/orders` | Place an order from cart items |
+| `GET` | `/orders/{user_id}` | List a customer's orders |
+| `PUT` | `/orders/{order_id}/cancel` | Cancel a pending customer order |
+| `POST` | `/admin/login` | Authenticate an admin |
+| `GET` / `POST` | `/admin/items`, `/items` | List or create products (admin) |
+| `PUT` / `DELETE` | `/items/{item_id}` | Update or archive/delete a product (admin) |
+| `GET` | `/admin/orders` | List orders (admin) |
+| `PUT` | `/admin/orders/{order_id}/status` | Update a pending order (admin) |
 
-## Notes
+For request and response schemas, see the interactive docs at **http://127.0.0.1:8000/docs** after starting the backend.
 
-- The repository currently includes a Python virtual environment under `backend/`.
-- CORS is enabled for all origins in the FastAPI backend; restrict this before production use.
-- Database credentials and the API URL are currently set directly in code rather than environment variables.
-- There is no backend dependency lockfile or requirements file included in the repo. Install the packages above in your own environment.
+## ⚠️ Development notes
 
+- Configure database credentials and the frontend API URL for your environment before running the app.
+- The backend currently allows CORS requests from all origins; restrict this before deploying publicly.
+- No backend dependency lockfile or `requirements.txt` is included yet; the install command above lists the required packages.
+- The project does not include payment processing.
+
+---
+
+<div align="center">
+
+Made with ☕, code, and a little bit of 🛍️
+
+</div>
