@@ -2,6 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+/** Body for creating or updating a product. */
+export interface ItemPayload {
+  item_name: string;
+  item_price: number;
+  item_category: string;
+  item_description: string;
+  item_status: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -54,4 +63,52 @@ export class ApiService {
   removeCartItem(cartItemId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/cart/${cartItemId}`);
   }
+
+  addAdminItem(itemData: ItemPayload): Observable<any> {
+    return this.http.post(`${this.apiUrl}/items`, itemData);
+  }
+
+  updateAdminItem(itemId: number, itemData: ItemPayload): Observable<any> {
+    return this.http.put(`${this.apiUrl}/items/${itemId}`, itemData);
+  }
+
+  deleteAdminItem(itemId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/items/${itemId}`);
+  }
+
+  getAdminOrders(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/admin/orders`);
+  }
+
+  updateOrderStatus(orderId: number, status: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/admin/orders/${orderId}/status`, {
+      status,
+    });
+  }
+
+  adminLogin(email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/admin/login`, {
+      email,
+      password,
+    });
+  }
+
+  adminGetItems(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/admin/items`);
+  }
+
+  getUserOrders(userId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/orders/${userId}`);
+  }
+
+  placeOrder(payload: {
+    user_id: number;
+    cart_item_ids?: number[];
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/orders`, payload);
+  }
+
+  cancelMyOrder(orderId: number, userId: number): Observable<any> {
+  return this.http.put(`${this.apiUrl}/orders/${orderId}/cancel`, { user_id: userId });
+}
 }

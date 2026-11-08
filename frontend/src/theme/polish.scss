@@ -1,0 +1,115 @@
+/* Project-wide polish. Uses only Ionic theme variables, so it follows your colours. */
+:root {
+  --page-max: 720px; /* narrow pages: cart, account */
+  --page-wide: 1100px; /* product grids */
+  --radius-card: 20px;
+  --shadow-card:
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 12px 28px rgba(0, 0, 0, 0.12);
+  /* tab bar height + its bottom margin + a small gap */
+  --tab-bar-space: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
+}
+
+/* Controls */
+ion-button {
+  --border-radius: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+ion-button[shape='round'] {
+  --border-radius: 999px;
+}
+
+ion-segment-button {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-searchbar {
+  --border-radius: 14px;
+  --box-shadow: none;
+}
+
+ion-modal {
+  --border-radius: 24px;
+}
+
+ion-card {
+  border: 1px solid var(--ion-border-color, rgba(128, 128, 128, 0.18));
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+/* Flat headers that match the page */
+ion-header ion-toolbar {
+  --background: var(--ion-background-color);
+  --border-width: 0;
+}
+
+ion-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/*
+ * Page footers (like the cart's checkout bar) float above the tab bar,
+ * centred and no wider than a readable column.
+ * Replaces any earlier "lift footers above the tab bar" rules.
+ */
+ion-tabs ion-footer {
+  max-width: var(--page-max);
+  margin: 0 auto var(--tab-bar-space);
+  padding: 0 12px;
+  background: transparent;
+  box-shadow: none;
+}
+
+ion-tabs ion-footer::before {
+  display: none;
+}
+
+ion-tabs ion-footer ion-toolbar {
+  --background: var(--ion-item-background, var(--ion-card-background, #fff));
+  --border-width: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.18),
+    0 0 0 1px var(--ion-border-color, rgba(128, 128, 128, 0.2));
+}
+
+/* Pages with a footer already end above the tab bar, so skip the extra scroll padding */
+ion-tabs .ion-page:has(> ion-footer) ion-content::part(scroll) {
+  padding-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Text that screen readers announce but nobody sees */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

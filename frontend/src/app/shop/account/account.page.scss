@@ -357,3 +357,124 @@ ion-content {
     }
   }
 }
+
+.orders {
+  display: grid;
+  gap: 12px;
+  margin: 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.orders-hint {
+  margin: 0 20px;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.order {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--ion-item-background, var(--ion-card-background, #fff));
+
+  &__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+    }
+  }
+
+  &__date {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--ion-color-medium);
+  }
+
+  &__items {
+    display: -webkit-box;
+    margin: 10px 0 0;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  &__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ion-border-color, rgba(128, 128, 128, 0.2));
+  }
+
+  &__note {
+    font-size: 13px;
+    color: var(--ion-color-medium);
+  }
+
+  &__total {
+    flex: none;
+    font-size: 16px;
+    font-weight: 700;
+  }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+
+  &--pending {
+    background: rgba(var(--ion-color-warning-rgb), 0.16);
+    color: var(--ion-color-warning-shade);
+  }
+
+  &--approved {
+    background: rgba(var(--ion-color-success-rgb), 0.16);
+    color: var(--ion-color-success-shade);
+  }
+
+  &--cancelled {
+    background: rgba(var(--ion-color-danger-rgb), 0.16);
+    color: var(--ion-color-danger-shade);
+  }
+}
+
+.skel-name {
+  width: 160px;
+  height: 22px;
+  margin: 4px 0;
+  border-radius: 8px;
+}
+
+.skel-mail {
+  width: 200px;
+  height: 14px;
+  margin: 4px 0 8px;
+  border-radius: 7px;
+}
+
+.order__cancel {
+  --border-radius: 12px;
+  height: 40px;
+  margin: 12px 0 0;
+}
+
+.order__note {
+  min-width: 0;
+}

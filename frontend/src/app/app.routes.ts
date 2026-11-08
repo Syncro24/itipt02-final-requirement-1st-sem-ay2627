@@ -32,4 +32,12 @@ export const routes: Routes = [
     path: 'auth',
     loadComponent: () => import('./auth/auth.page').then( m => m.AuthPage)
   },
+  {
+    path: 'admin',
+    loadComponent: () => import('./admin/admin.page').then( m => m.AdminPage)
+  },
+  {
+    path: 'admin-auth',
+    loadComponent: () => import('./admin-auth/admin-auth.page').then( m => m.AdminAuthPage)
+  },
 ];

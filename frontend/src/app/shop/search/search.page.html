@@ -17,6 +17,7 @@
   <!-- Category pills -->
   <div class="filters-wrap">
     <ion-segment
+      mode="ios"
       class="filters"
       [scrollable]="true"
       [(ngModel)]="selectedCategory"
@@ -25,80 +26,200 @@
       <ion-segment-button value="All">
         <ion-label>All</ion-label>
       </ion-segment-button>
-      <ion-segment-button value="Electronics">
-        <ion-label>Electronics</ion-label>
+      @for (c of categories(); track c) {
+      <ion-segment-button [value]="c">
+        <ion-label>{{ c }}</ion-label>
       </ion-segment-button>
-      <ion-segment-button value="Accessories">
-        <ion-label>Accessories</ion-label>
-      </ion-segment-button>
+      }
     </ion-segment>
   </div>
 
-  @if (filteredItems().length > 0) {
-    <p class="result-count" aria-live="polite">
-      {{ filteredItems().length }}
-      {{ filteredItems().length === 1 ? 'product' : 'products' }}
-    </p>
+  @if (loading()) {
+  <p class="sr-only" role="status">Loading products</p>
+  <div class="product-container" aria-busy="true">
+    @for (n of placeholders; track n) {
+    <app-product-skeleton></app-product-skeleton>
+    }
+  </div>
+  } @else if (loadFailed()) {
+  <div class="empty">
+    <div class="empty-icon">
+      <ion-icon name="cube-outline" aria-hidden="true"></ion-icon>
+    </div>
+    <h3>Couldn't load products</h3>
+    <p>Check that the server is running, then try again.</p>
+    <ion-button fill="outline" shape="round" (click)="loadItems()"
+      >Retry</ion-button
+    >
+  </div>
+  } @else if (filteredItems().length > 0) {
+  <p class="result-count" aria-live="polite">
+    {{ filteredItems().length }} {{ filteredItems().length === 1 ? 'product' :
+    'products' }}
+  </p>
 
-    <div class="product-container">
-      @for (item of visibleItems(); track item.ITEM_ID) {
-        <ion-card class="product-card">
-          <div class="thumb" aria-hidden="true">
-            <ion-icon
-              [name]="
-                item.ITEM_CATEGORY?.toLowerCase() === 'electronics'
-                  ? 'hardware-chip-outline'
-                  : item.ITEM_CATEGORY?.toLowerCase() === 'accessories'
-                    ? 'headset-outline'
-                    : 'cube-outline'
-              "
-            ></ion-icon>
+  <div class="product-container">
+    @for (item of visibleItems(); track item.ITEM_ID) {
+    <ion-card class="product-card">
+      <div
+        class="card-open"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'View details for ' + item.ITEM_NAME"
+        (click)="openDetails(item)"
+        (keydown.enter)="openDetails(item)"
+        (keydown.space)="openDetails(item); $event.preventDefault()"
+      >
+        <div class="thumb" aria-hidden="true">
+          <ion-icon [name]="iconFor(item)"></ion-icon>
+        </div>
+
+        <div class="card-body-wrapper">
+          @if (item.ITEM_CATEGORY) {
+          <span class="category-tag">{{ item.ITEM_CATEGORY }}</span>
+          }
+          <ion-card-header>
+            <ion-card-title>{{ item.ITEM_NAME }}</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p>{{ item.ITEM_DESCRIPTION }}</p>
+          </ion-card-content>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span class="price">
+          <span class="currency">₱</span>{{ item.ITEM_PRICE | number: '1.2-2' }}
+        </span>
+        <ion-button
+          size="small"
+          fill="solid"
+          shape="round"
+          [disabled]="addingItemId() === item.ITEM_ID"
+          (click)="buyNow(item)"
+        >
+          {{ addingItemId() === item.ITEM_ID ? 'Adding…' : 'Add to Cart' }}
+        </ion-button>
+      </div>
+    </ion-card>
+    } @if (loadingMore()) { @for (n of moreSkeletons(); track n) {
+    <app-product-skeleton></app-product-skeleton>
+    } }
+  </div>
+
+  <ion-infinite-scroll
+    threshold="150px"
+    [disabled]="noMoreItems()"
+    (ionInfinite)="loadMore($event)"
+  ></ion-infinite-scroll>
+  <p class="sr-only" role="status">
+    {{ loadingMore() ? 'Loading more products' : '' }}
+  </p>
+  } @else {
+  <div class="empty">
+    <div class="empty-icon">
+      <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
+    </div>
+    <h3>No products found</h3>
+    <p>Check the spelling or try a different category.</p>
+    <ion-button fill="outline" shape="round" (click)="clearFilters()">
+      Clear filters
+    </ion-button>
+  </div>
+  }
+  <ion-modal
+    class="detail-sheet"
+    [isOpen]="detailOpen()"
+    [initialBreakpoint]="1"
+    [breakpoints]="[0, 1]"
+    (didDismiss)="closeDetails()"
+  >
+    <ng-template>
+      @if (detailItem(); as p) {
+      <ion-header class="ion-no-border">
+        <ion-toolbar>
+          <ion-title>Product details</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeDetails()" aria-label="Close">
+              <ion-icon
+                slot="icon-only"
+                name="close-outline"
+                aria-hidden="true"
+              ></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <div class="detail">
+          <div class="detail__art" aria-hidden="true">
+            <ion-icon [name]="iconFor(p)"></ion-icon>
           </div>
 
-          <div class="card-body-wrapper">
-            @if (item.ITEM_CATEGORY) {
-              <span class="category-tag">{{ item.ITEM_CATEGORY }}</span>
-            }
-            <ion-card-header>
-              <ion-card-title>{{ item.ITEM_NAME }}</ion-card-title>
-            </ion-card-header>
-            <ion-card-content>
-              <p>{{ item.ITEM_DESCRIPTION }}</p>
-            </ion-card-content>
-          </div>
+          @if (p.ITEM_CATEGORY) {
+          <span class="category-tag detail__tag">{{ p.ITEM_CATEGORY }}</span>
+          }
+          <h2 class="detail__name">{{ p.ITEM_NAME }}</h2>
+          <p class="detail__price">
+            <span class="currency">₱</span>{{ p.ITEM_PRICE | number: '1.2-2' }}
+          </p>
 
-          <div class="card-footer">
-            <span class="price">
-              <span class="currency">₱</span>{{ item.ITEM_PRICE | number: '1.2-2' }}
-            </span>
+          <h3 class="detail__heading">About this product</h3>
+          <p class="detail__text">
+            {{ p.ITEM_DESCRIPTION || 'No description has been added for this
+            product yet.' }}
+          </p>
+        </div>
+      </ion-content>
+
+      <ion-footer class="ion-no-border">
+        <ion-toolbar>
+          <div class="detail__bar">
+            <div class="detail__stepper" role="group" aria-label="Quantity">
+              <ion-button
+                fill="clear"
+                size="small"
+                [disabled]="detailQty() <= 1"
+                (click)="changeDetailQty(-1)"
+                aria-label="Decrease quantity"
+              >
+                <ion-icon
+                  slot="icon-only"
+                  name="remove-outline"
+                  aria-hidden="true"
+                ></ion-icon>
+              </ion-button>
+              <span class="detail__qty" aria-live="polite"
+                >{{ detailQty() }}</span
+              >
+              <ion-button
+                fill="clear"
+                size="small"
+                (click)="changeDetailQty(1)"
+                aria-label="Increase quantity"
+              >
+                <ion-icon
+                  slot="icon-only"
+                  name="add-outline"
+                  aria-hidden="true"
+                ></ion-icon>
+              </ion-button>
+            </div>
+
             <ion-button
-              size="small" fill="solid" shape="round"
-              [disabled]="addingItemId() === item.ITEM_ID"
-              (click)="buyNow(item)"
+              class="detail__add"
+              shape="round"
+              [disabled]="addingItemId() === p.ITEM_ID"
+              (click)="buyNow(p, detailQty())"
             >
-              {{ addingItemId() === item.ITEM_ID ? 'Adding…' : 'Buy now' }}
+              {{ addingItemId() === p.ITEM_ID ? 'Adding…' : 'Add to cart · ₱' +
+              (detailTotal() | number: '1.2-2') }}
             </ion-button>
           </div>
-        </ion-card>
+        </ion-toolbar>
+      </ion-footer>
       }
-    </div>
-
-    <ion-infinite-scroll [disabled]="noMoreItems()" (ionInfinite)="loadMore($event)">
-      <ion-infinite-scroll-content
-        loadingSpinner="dots"
-        loadingText="Loading more products"
-      ></ion-infinite-scroll-content>
-    </ion-infinite-scroll>
-  } @else {
-    <div class="empty">
-      <div class="empty-icon">
-        <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
-      </div>
-      <h3>No products found</h3>
-      <p>Check the spelling or try a different category.</p>
-      <ion-button fill="outline" shape="round" (click)="clearFilters()">
-        Clear filters
-      </ion-button>
-    </div>
-  }
+    </ng-template>
+  </ion-modal>
 </ion-content>

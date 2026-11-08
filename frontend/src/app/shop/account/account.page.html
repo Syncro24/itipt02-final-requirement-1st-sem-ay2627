@@ -14,28 +14,89 @@
   <!-- Read-only summary of the logged-in user -->
   <header class="identity">
     <span class="tile tile--xl" aria-hidden="true">
-      {{ ((user().FIRST_NAME?.charAt(0) || '') + (user().LAST_NAME?.charAt(0) || '')) || 'U' }}
+      {{ ((user().FIRST_NAME?.charAt(0) || '') + (user().LAST_NAME?.charAt(0) ||
+      '')) || 'U' }}
     </span>
-    <h2>{{ user().NAME || 'Loading…' }}</h2>
-    <p>{{ user().EMAIL || '…' }}</p>
-    <ion-button class="edit-btn" size="small" fill="outline" shape="round" (click)="openEditModal()">
+    @if (user().NAME) {
+    <h2>{{ user().NAME }}</h2>
+    <p>{{ user().EMAIL }}</p>
+    } @else {
+    <ion-skeleton-text class="skel-name" [animated]="true"></ion-skeleton-text>
+    <ion-skeleton-text class="skel-mail" [animated]="true"></ion-skeleton-text>
+    }
+    <ion-button
+      class="edit-btn"
+      size="small"
+      fill="outline"
+      shape="round"
+      (click)="openEditModal()"
+    >
       Edit profile
     </ion-button>
   </header>
 
   <h2 class="section-title">Your orders</h2>
 
-  <ion-list class="card-list" [inset]="true" lines="none">
-    <ion-item>
-      <div slot="start" class="tile">
-        <ion-icon name="bag-handle-outline" aria-hidden="true"></ion-icon>
+  @if (ordersState() === 'error') {
+  <div class="empty">
+    <ion-icon name="bag-handle-outline" aria-hidden="true"></ion-icon>
+    <h3>Couldn't load your orders</h3>
+    <p>Check your connection and try again.</p>
+    <ion-button fill="clear" (click)="loadOrders()">Retry</ion-button>
+  </div>
+  } @else if (orderRows().length) {
+  <ul class="orders">
+    @for (o of orderRows(); track o.ORDER_ID) {
+    <li class="order">
+      <div class="order__top">
+        <div>
+          <h3>Order #{{ o.ORDER_ID }}</h3>
+          <p class="order__date">
+            {{ o.CREATED_AT | date: 'MMM d, y, h:mm a' }}
+          </p>
+        </div>
+        <span [class]="o.pillClass">{{ o.STATUS }}</span>
       </div>
-      <ion-label>
-        <h3>No orders yet</h3>
-        <p>Your purchases will show up here.</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
+
+      @if (o.summary) {
+      <p class="order__items">{{ o.summary }}</p>
+      }
+
+      <div class="order__bottom">
+        <span class="order__note">{{ o.note }}</span>
+        <strong class="order__total"
+          >₱{{ o.TOTAL_AMOUNT | number: '1.2-2' }}</strong
+        >
+      </div>
+      @if (o.STATUS === 'Pending') {
+      <ion-button
+        class="order__cancel"
+        expand="block"
+        fill="outline"
+        color="danger"
+        [disabled]="cancellingId() === o.ORDER_ID"
+        (click)="confirmCancel(o)"
+      >
+        {{ cancellingId() === o.ORDER_ID ? 'Cancelling…' : 'Cancel order' }}
+      </ion-button>
+      }
+    </li>
+    }
+  </ul>
+  } @else if (ordersState() === 'loading') {
+  <div class="orders" aria-busy="true">
+    <p class="sr-only" role="status">Loading your orders</p>
+    @for (n of [1, 2]; track n) {
+    <app-order-skeleton></app-order-skeleton>
+    }
+  </div>
+  } @else {
+  <div class="empty">
+    <ion-icon name="bag-handle-outline" aria-hidden="true"></ion-icon>
+    <h3>No orders yet</h3>
+    <p>Your purchases will show up here.</p>
+  </div>
+  }
 
   <h2 class="section-title">Settings &amp; preferences</h2>
 
@@ -55,7 +116,13 @@
     </ion-item>
   </ion-list>
 
-  <ion-button id="shop-logout" class="logout" expand="block" fill="outline" color="danger">
+  <ion-button
+    id="shop-logout"
+    class="logout"
+    expand="block"
+    fill="outline"
+    color="danger"
+  >
     <ion-icon slot="start" name="log-out-outline" aria-hidden="true"></ion-icon>
     Log out
   </ion-button>
@@ -76,9 +143,16 @@
     <ng-template>
       <ion-header class="ion-no-border">
         <ion-toolbar>
-          <ion-title>{{ isEditing() ? 'Edit profile' : 'Profile information' }}</ion-title>
+          <ion-title
+            >{{ isEditing() ? 'Edit profile' : 'Profile information'
+            }}</ion-title
+          >
           <ion-buttons slot="end">
-            <ion-button class="close-btn" (click)="closeModal()" aria-label="Close">
+            <ion-button
+              class="close-btn"
+              (click)="closeModal()"
+              aria-label="Close"
+            >
               <ion-icon name="close-outline" slot="icon-only"></ion-icon>
             </ion-button>
           </ion-buttons>
@@ -88,54 +162,79 @@
       <ion-content class="ion-padding">
         <div class="modal-body">
           @if (!isEditing()) {
-            <dl class="info-list">
-              <div class="info-row">
-                <dt>First name</dt>
-                <dd>{{ user().FIRST_NAME || '—' }}</dd>
-              </div>
-              <div class="info-row">
-                <dt>Last name</dt>
-                <dd>{{ user().LAST_NAME || '—' }}</dd>
-              </div>
-              <div class="info-row">
-                <dt>Email address</dt>
-                <dd>{{ user().EMAIL || '—' }}</dd>
-              </div>
-            </dl>
+          <dl class="info-list">
+            <div class="info-row">
+              <dt>First name</dt>
+              <dd>{{ user().FIRST_NAME || '—' }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>Last name</dt>
+              <dd>{{ user().LAST_NAME || '—' }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>Email address</dt>
+              <dd>{{ user().EMAIL || '—' }}</dd>
+            </div>
+          </dl>
 
-            <ion-button class="primary-btn" expand="block" shape="round" (click)="startEdit()">
-              Edit profile
-            </ion-button>
+          <ion-button
+            class="primary-btn"
+            expand="block"
+            shape="round"
+            (click)="startEdit()"
+          >
+            Edit profile
+          </ion-button>
           } @else {
-            <form class="edit-form" (ngSubmit)="saveProfile()">
-              <ion-input
-                fill="outline" label="First name" labelPlacement="floating"
-                autocomplete="given-name"
-                [(ngModel)]="editFirstName" name="first_name"
-              ></ion-input>
+          <form class="edit-form" (ngSubmit)="saveProfile()">
+            <ion-input
+              fill="outline"
+              label="First name"
+              labelPlacement="floating"
+              autocomplete="given-name"
+              [(ngModel)]="editFirstName"
+              name="first_name"
+            ></ion-input>
 
-              <ion-input
-                fill="outline" label="Last name" labelPlacement="floating"
-                autocomplete="family-name"
-                [(ngModel)]="editLastName" name="last_name"
-              ></ion-input>
+            <ion-input
+              fill="outline"
+              label="Last name"
+              labelPlacement="floating"
+              autocomplete="family-name"
+              [(ngModel)]="editLastName"
+              name="last_name"
+            ></ion-input>
 
-              <ion-input
-                fill="outline" label="Email address" labelPlacement="floating"
-                type="email" inputmode="email" autocomplete="email"
-                [(ngModel)]="editEmail" name="email"
-              ></ion-input>
+            <ion-input
+              fill="outline"
+              label="Email address"
+              labelPlacement="floating"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              [(ngModel)]="editEmail"
+              name="email"
+            ></ion-input>
 
-              <ion-button
-                class="primary-btn" expand="block" type="submit" shape="round"
-                [disabled]="!editFirstName() || !editLastName() || !editEmail()"
-              >
-                Save changes
-              </ion-button>
-              <ion-button class="secondary-btn" expand="block" fill="outline" shape="round" (click)="closeModal()">
-                Cancel
-              </ion-button>
-            </form>
+            <ion-button
+              class="primary-btn"
+              expand="block"
+              type="submit"
+              shape="round"
+              [disabled]="!editFirstName() || !editLastName() || !editEmail()"
+            >
+              Save changes
+            </ion-button>
+            <ion-button
+              class="secondary-btn"
+              expand="block"
+              fill="outline"
+              shape="round"
+              (click)="closeModal()"
+            >
+              Cancel
+            </ion-button>
+          </form>
           }
         </div>
       </ion-content>

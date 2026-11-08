@@ -1,9 +1,16 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CartSkeletonComponent } from '../../shared/skeleton';
 import { Router, RouterLink } from '@angular/router';
+import { addIcons } from 'ionicons';
+import {
+  addOutline,
+  cartOutline,
+  removeOutline,
+  trashOutline,
+} from 'ionicons/icons';
 import {
   IonButton,
-  IonCard,
   IonCheckbox,
   IonContent,
   IonFooter,
@@ -13,27 +20,16 @@ import {
   IonToolbar,
   ToastController,
 } from '@ionic/angular';
-import { addIcons } from 'ionicons';
-import {
-  addOutline,
-  bagHandleOutline,
-  cartOutline,
-  cubeOutline,
-  hardwareChipOutline,
-  headsetOutline,
-  removeOutline,
-  trashOutline,
-} from 'ionicons/icons';
 import { ApiService } from '../../services/api';
+import { productIcon, productIconSet } from '../../services/product-icon';
 
-interface CartItem {
+interface CartRow {
   CART_ITEM_ID: number;
   ITEM_ID: number;
-  ITEM_NAME: string;
-  ITEM_PRICE: number;
-  ITEM_CATEGORY?: string;
   QUANTITY: number;
-  selected: boolean;
+  ITEM_NAME: string;
+  ITEM_PRICE: number | string;
+  ITEM_CATEGORY: string | null;
 }
 
 @Component({
@@ -41,140 +37,213 @@ interface CartItem {
   templateUrl: './cart.page.html',
   styleUrls: ['./cart.page.scss'],
   imports: [
-    CommonModule,
+    DecimalPipe,
     RouterLink,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
     IonButton,
-    IonIcon,
-    IonCard,
     IonCheckbox,
+    IonContent,
     IonFooter,
+    IonHeader,
+    IonIcon,
+    IonTitle,
+    IonToolbar,
+    CartSkeletonComponent,
   ],
 })
 export class CartPage {
-  cartItems = signal<CartItem[]>([]);
+  protected readonly items = signal<CartRow[]>([]);
+  protected readonly selected = signal<ReadonlySet<number>>(new Set());
+  protected readonly state = signal<'loading' | 'ready' | 'error'>('loading');
+  protected readonly placing = signal(false);
 
-  // Derived values: they update automatically whenever cartItems changes
-  selectedItems = computed(() => this.cartItems().filter((i) => i.selected));
-  selectedCount = computed(() => this.selectedItems().length);
-  totalPrice = computed(() =>
-    this.selectedItems().reduce((sum, i) => sum + Number(i.ITEM_PRICE) * i.QUANTITY, 0),
+  /** Rows already shown, so new items start ticked and unticked ones stay unticked. */
+  private known = new Set<number>();
+
+  protected readonly selectedItems = computed(() =>
+    this.items().filter((i) => this.selected().has(i.CART_ITEM_ID)),
   );
-  allSelected = computed(
-    () => this.cartItems().length > 0 && this.cartItems().every((i) => i.selected),
+  protected readonly selectedCount = computed(
+    () => this.selectedItems().length,
+  );
+  protected readonly allSelected = computed(
+    () =>
+      this.items().length > 0 && this.selectedCount() === this.items().length,
+  );
+  protected readonly total = computed(() =>
+    this.selectedItems().reduce(
+      (sum, i) => sum + Number(i.ITEM_PRICE) * i.QUANTITY,
+      0,
+    ),
   );
 
   constructor(
     private api: ApiService,
     private router: Router,
-    private toastController: ToastController,
+    private toasts: ToastController,
   ) {
     addIcons({
+      ...productIconSet,
       addOutline,
-      bagHandleOutline,
       cartOutline,
-      cubeOutline,
-      hardwareChipOutline,
-      headsetOutline,
       removeOutline,
       trashOutline,
     });
   }
 
-  // Reload every time the tab is entered (e.g. right after "Buy now" on the search page)
-  ionViewWillEnter() {
-    this.loadCart();
+  // Items can be added from the search tab, so reload every time this tab opens
+  ionViewWillEnter(): void {
+    this.load();
   }
 
-  private getLoggedInUserId(): number | null {
+  private userId(): number | null {
     const id = Number(localStorage.getItem('user_id'));
     return Number.isInteger(id) && id > 0 ? id : null;
   }
 
-  loadCart() {
-    const userId = this.getLoggedInUserId();
+  load(): void {
+    const userId = this.userId();
     if (userId === null) {
       this.router.navigateByUrl('/auth', { replaceUrl: true });
       return;
     }
 
-    // Item just added via "Buy now" is pre-selected; earlier selections are kept
-    const justAddedId = history.state?.addedItemId;
-    const previouslySelected = new Set(
-      this.cartItems().filter((i) => i.selected).map((i) => i.CART_ITEM_ID),
-    );
-
     this.api.getCart(userId).subscribe({
       next: (res: any) => {
-        const items: CartItem[] = (res.cart || []).map((item: any) => ({
-          ...item,
-          selected: previouslySelected.has(item.CART_ITEM_ID) || item.ITEM_ID === justAddedId,
-        }));
-        this.cartItems.set(items);
+        const rows: CartRow[] = res.cart ?? [];
+        const next = new Set<number>();
+        for (const row of rows) {
+          const id = row.CART_ITEM_ID;
+          if (!this.known.has(id) || this.selected().has(id)) next.add(id);
+        }
+        this.known = new Set(rows.map((r) => r.CART_ITEM_ID));
+        this.items.set(rows);
+        this.selected.set(next);
+        this.state.set('ready');
       },
-      error: (err: any) => console.error('Failed to load cart', err),
+      error: (err: any) => {
+        console.error('Failed to load cart', err);
+        this.state.set('error');
+      },
     });
   }
 
-  // ----- Selection -----
-  toggleItem(cartItemId: number, checked: boolean) {
-    this.cartItems.update((items) =>
-      items.map((i) => (i.CART_ITEM_ID === cartItemId ? { ...i, selected: checked } : i)),
+  protected iconFor(row: CartRow): string {
+    return productIcon(row.ITEM_NAME, row.ITEM_CATEGORY);
+  }
+
+  protected lineTotal(row: CartRow): number {
+    return Number(row.ITEM_PRICE) * row.QUANTITY;
+  }
+
+  // ---------- selection ----------
+
+  protected onToggle(id: number, event: Event): void {
+    const checked = (event as CustomEvent<{ checked: boolean }>).detail.checked;
+    const next = new Set(this.selected());
+    if (checked) next.add(id);
+    else next.delete(id);
+    this.selected.set(next);
+  }
+
+  protected onToggleAll(event: Event): void {
+    const checked = (event as CustomEvent<{ checked: boolean }>).detail.checked;
+    this.selected.set(
+      checked ? new Set(this.items().map((i) => i.CART_ITEM_ID)) : new Set(),
     );
   }
 
-  toggleSelectAll(checked: boolean) {
-    this.cartItems.update((items) => items.map((i) => ({ ...i, selected: checked })));
+  // ---------- quantity / remove ----------
+
+  protected changeQuantity(row: CartRow, delta: number): void {
+    const quantity = row.QUANTITY + delta;
+    if (quantity < 1 || quantity > 99) return;
+
+    // Update the screen first, then tell the server; reload if the server refuses
+    this.items.update((list) =>
+      list.map((i) =>
+        i.CART_ITEM_ID === row.CART_ITEM_ID ? { ...i, QUANTITY: quantity } : i,
+      ),
+    );
+    this.api.updateCartQuantity(row.CART_ITEM_ID, quantity).subscribe({
+      error: () => {
+        this.showToast('Could not update the quantity.', 'danger');
+        this.load();
+      },
+    });
   }
 
-  // ----- Quantity -----
-  changeQty(item: CartItem, delta: number) {
-    const newQty = item.QUANTITY + delta;
-    if (newQty < 1) {
-      this.removeItem(item.CART_ITEM_ID);
+  protected remove(row: CartRow): void {
+    this.api.removeCartItem(row.CART_ITEM_ID).subscribe({
+      next: () => {
+        this.items.update((list) =>
+          list.filter((i) => i.CART_ITEM_ID !== row.CART_ITEM_ID),
+        );
+        const next = new Set(this.selected());
+        next.delete(row.CART_ITEM_ID);
+        this.selected.set(next);
+        this.known.delete(row.CART_ITEM_ID);
+      },
+      error: () => this.showToast('Could not remove the item.', 'danger'),
+    });
+  }
+
+  // ---------- checkout ----------
+
+  protected checkout(): void {
+    const userId = this.userId();
+    if (userId === null) {
+      this.router.navigateByUrl('/auth', { replaceUrl: true });
       return;
     }
+    if (this.placing() || this.selectedCount() === 0) return;
 
-    this.cartItems.update((items) =>
-      items.map((i) => (i.CART_ITEM_ID === item.CART_ITEM_ID ? { ...i, QUANTITY: newQty } : i)),
-    );
-
-    this.api.updateCartQuantity(item.CART_ITEM_ID, newQty).subscribe({
-      error: (err: any) => {
-        console.error('Failed to update quantity', err);
-        this.loadCart(); // put the screen back in sync with the server
-      },
-    });
+    this.placing.set(true);
+    this.api
+      .placeOrder({
+        user_id: userId,
+        cart_item_ids: this.selectedItems().map((i) => i.CART_ITEM_ID),
+      })
+      .subscribe({
+        next: (res: any) => {
+          this.placing.set(false);
+          this.load(); // the ordered items are gone from the cart now
+          this.showToast(
+            `Order #${res.order_id} placed. Waiting for approval.`,
+            'success',
+            true,
+          );
+        },
+        error: (err: any) => {
+          console.error('Checkout failed', err);
+          this.placing.set(false);
+          this.showToast(
+            err?.error?.detail ??
+              'Could not place your order. Please try again.',
+            'danger',
+          );
+          this.load();
+        },
+      });
   }
 
-  removeItem(cartItemId: number) {
-    this.api.removeCartItem(cartItemId).subscribe({
-      next: () =>
-        this.cartItems.update((items) => items.filter((i) => i.CART_ITEM_ID !== cartItemId)),
-      error: (err: any) => console.error('Failed to remove item', err),
-    });
-  }
-
-  categoryIcon(category?: string): string {
-    switch ((category || '').toLowerCase()) {
-      case 'electronics':
-        return 'hardware-chip-outline';
-      case 'accessories':
-        return 'headset-outline';
-      default:
-        return 'cube-outline';
-    }
-  }
-
-  // Placeholder: there is no orders endpoint yet
-  async checkout() {
-    const toast = await this.toastController.create({
-      message: `Checkout successful for ₱${this.totalPrice().toFixed(2)}!`,
-      duration: 3000,
-      color: 'success',
+  private async showToast(
+    message: string,
+    color: 'success' | 'danger',
+    withViewOrders = false,
+  ): Promise<void> {
+    const toast = await this.toasts.create({
+      message,
+      duration: 4000,
+      color,
+      position: 'top',
+      buttons: withViewOrders
+        ? [
+            {
+              text: 'View',
+              handler: () => this.router.navigateByUrl('/account'),
+            },
+          ]
+        : [],
     });
     await toast.present();
   }
