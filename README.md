@@ -82,7 +82,8 @@ pie showData
 ### Prerequisites
 
 - Python 3 and `pip`
-- Node.js and `npm`
+- Node.js and `npm` (required by the Ionic/Angular tooling)
+- Ionic CLI
 - A running MariaDB or MySQL server
 
 ### 1. Set up the database 🗄️
@@ -111,25 +112,25 @@ The API runs at **http://127.0.0.1:8000**. Open **http://127.0.0.1:8000/docs** f
 
 The database connection settings are currently defined in `backend/backend.py` (default: host `localhost`, user `root`, empty password, database `ecommerce_db`). Update them to match your local MySQL/MariaDB configuration.
 
-### 3. Install and start the frontend 📱
+### 3. Start the Ionic app with `ionic serve` 📱
 
-In another terminal:
+Install the Ionic CLI if it is not already installed, then install the frontend dependencies and serve the app:
 
 ```bash
+npm install -g @ionic/cli
 cd frontend
 npm install
-npm start
+ionic serve
 ```
 
-The Angular development server will print its local address when it starts. The API base URL is currently set to `http://127.0.0.1:8000` in `frontend/src/app/services/api.ts`.
+`ionic serve` starts the app in the browser and watches for frontend changes. The API base URL is currently set to `http://127.0.0.1:8000` in `frontend/src/app/services/api.ts`.
 
-### 🧪 Frontend commands
+### 🧪 Additional frontend commands
 
 Run these from `frontend/`:
 
 | Command | Description |
 | --- | --- |
-| `npm start` | Start the development server |
 | `npm run build` | Build the frontend |
 | `npm test` | Run frontend tests |
 | `npm run lint` | Lint the frontend |
