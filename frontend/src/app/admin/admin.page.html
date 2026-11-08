@@ -1,0 +1,388 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Admin</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()" aria-label="Log out">
+        <ion-icon
+          slot="icon-only"
+          name="log-out-outline"
+          aria-hidden="true"
+        ></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page">
+    <ion-segment
+      class="main-seg"
+      mode="ios"
+      [value]="tab()"
+      (ionChange)="onTab($event)"
+    >
+      <ion-segment-button value="products" [contentId]="null">
+        <ion-label>Products</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="orders" [contentId]="null">
+        <ion-label>Orders</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    @if (tab() === 'products') {
+    <dl class="stats">
+      <div>
+        <dt>Total</dt>
+        <dd>{{ itemCounts().total }}</dd>
+      </div>
+      <div>
+        <dt>Approved</dt>
+        <dd>{{ itemCounts().approved }}</dd>
+      </div>
+      <div>
+        <dt>Pending</dt>
+        <dd>{{ itemCounts().pending }}</dd>
+      </div>
+      <div>
+        <dt>Archived</dt>
+        <dd>{{ itemCounts().archived }}</dd>
+      </div>
+    </dl>
+
+    <ion-searchbar
+      placeholder="Search name, category or description"
+      [debounce]="150"
+      [value]="query()"
+      (ionInput)="onSearch($event)"
+    ></ion-searchbar>
+
+    <ion-segment
+      class="filters"
+      mode="ios"
+      [scrollable]="true"
+      [value]="itemFilter()"
+      (ionChange)="onItemFilter($event)"
+    >
+      @for (s of itemFilters; track s) {
+      <ion-segment-button [value]="s" [contentId]="null">
+        <ion-label>{{ s }}</ion-label>
+      </ion-segment-button>
+      }
+    </ion-segment>
+
+    <p class="count" aria-live="polite">
+      {{ visibleItems().length }} {{ visibleItems().length === 1 ? 'product' :
+      'products' }}
+    </p>
+
+    @if (itemsLoading()) {
+    <ul class="grid" aria-busy="true">
+      <li class="sr-only" role="status">Loading products</li>
+      @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+      <li><app-admin-row-skeleton></app-admin-row-skeleton></li>
+      }
+    </ul>
+    } @else if (visibleItems().length) {
+    <ul class="grid">
+      @for (item of visibleItems(); track item.ITEM_ID) {
+      <li class="row">
+        <span class="tile"
+          ><ion-icon
+            [name]="iconFor(item.ITEM_CATEGORY)"
+            aria-hidden="true"
+          ></ion-icon
+        ></span>
+
+        <div class="info">
+          <h3>{{ item.ITEM_NAME }}</h3>
+          <p>{{ item.ITEM_CATEGORY || 'General' }}</p>
+          <span [class]="pillClass(item.ITEM_STATUS)"
+            >{{ item.ITEM_STATUS }}</span
+          >
+        </div>
+
+        <div class="end">
+          <strong class="price"
+            >₱{{ item.ITEM_PRICE | number: '1.2-2' }}</strong
+          >
+          <div class="actions">
+            <ion-button
+              fill="clear"
+              size="small"
+              (click)="openEditModal(item)"
+              [attr.aria-label]="'Edit ' + item.ITEM_NAME"
+            >
+              <ion-icon
+                slot="icon-only"
+                name="create-outline"
+                aria-hidden="true"
+              ></ion-icon>
+            </ion-button>
+            <ion-button
+              fill="clear"
+              size="small"
+              [color]="item.ITEM_STATUS === 'Archived' ? 'danger' : 'warning'"
+              (click)="confirmRemove(item)"
+              [attr.aria-label]="(item.ITEM_STATUS === 'Archived' ? 'Delete ' : 'Archive ') + item.ITEM_NAME"
+            >
+              <ion-icon
+                slot="icon-only"
+                [name]="item.ITEM_STATUS === 'Archived' ? 'trash-outline' : 'archive-outline'"
+                aria-hidden="true"
+              ></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+      </li>
+      }
+    </ul>
+    } @else {
+    <div class="empty">
+      <ion-icon name="cube-outline" aria-hidden="true"></ion-icon>
+      <h3>No products found</h3>
+      <p>Try a different search or filter, or add a new product.</p>
+    </div>
+    } } @else {
+    <dl class="stats">
+      <div>
+        <dt>Total</dt>
+        <dd>{{ orderCounts().total }}</dd>
+      </div>
+      <div>
+        <dt>Pending</dt>
+        <dd>{{ orderCounts().pending }}</dd>
+      </div>
+      <div>
+        <dt>Approved</dt>
+        <dd>{{ orderCounts().approved }}</dd>
+      </div>
+      <div>
+        <dt>Cancelled</dt>
+        <dd>{{ orderCounts().cancelled }}</dd>
+      </div>
+    </dl>
+
+    <ion-searchbar
+      placeholder="Search order number or customer"
+      [debounce]="150"
+      [value]="query()"
+      (ionInput)="onSearch($event)"
+    ></ion-searchbar>
+
+    <ion-segment
+      class="filters"
+      mode="ios"
+      [scrollable]="true"
+      [value]="orderFilter()"
+      (ionChange)="onOrderFilter($event)"
+    >
+      @for (s of orderFilters; track s) {
+      <ion-segment-button [value]="s" [contentId]="null">
+        <ion-label>{{ s }}</ion-label>
+      </ion-segment-button>
+      }
+    </ion-segment>
+
+    <p class="count" aria-live="polite">
+      {{ visibleOrders().length }} {{ visibleOrders().length === 1 ? 'order' :
+      'orders' }}
+    </p>
+
+    @if (ordersLoading()) {
+    <ul class="grid" aria-busy="true">
+      <li class="sr-only" role="status">Loading orders</li>
+      @for (n of [1, 2, 3, 4]; track n) {
+      <li><app-admin-row-skeleton></app-admin-row-skeleton></li>
+      }
+    </ul>
+    } @else if (visibleOrders().length) {
+    <ul class="grid">
+      @for (order of visibleOrders(); track order.ORDER_ID) {
+      <li class="row row--wrap">
+        <span class="tile"
+          ><ion-icon name="receipt-outline" aria-hidden="true"></ion-icon
+        ></span>
+
+        <div class="info">
+          <h3>Order #{{ order.ORDER_ID }}</h3>
+          <p class="info__sub">{{ order.USER_NAME || order.USER_EMAIL }}</p>
+          <span [class]="pillClass(order.STATUS)">{{ order.STATUS }}</span>
+        </div>
+
+        <div class="end">
+          <strong class="price"
+            >₱{{ order.TOTAL_AMOUNT | number: '1.2-2' }}</strong
+          >
+          <span class="date"
+            >{{ order.CREATED_AT | date: 'MMM d, h:mm a' }}</span
+          >
+        </div>
+
+        @if (order.ITEMS?.length) {
+        <p class="row__items">{{ orderSummary(order) }}</p>
+        } @if (order.STATUS === 'Pending') {
+        <div class="row__actions">
+          <ion-button
+            expand="block"
+            fill="outline"
+            color="danger"
+            (click)="confirmCancelOrder(order)"
+          >
+            <ion-icon
+              slot="start"
+              name="close-outline"
+              aria-hidden="true"
+            ></ion-icon>
+            Cancel
+          </ion-button>
+          <ion-button
+            expand="block"
+            color="success"
+            (click)="updateOrderStatus(order.ORDER_ID, 'Approved')"
+          >
+            <ion-icon
+              slot="start"
+              name="checkmark-outline"
+              aria-hidden="true"
+            ></ion-icon>
+            Approve
+          </ion-button>
+        </div>
+        }
+      </li>
+      }
+    </ul>
+    } @else {
+    <div class="empty">
+      <ion-icon name="receipt-outline" aria-hidden="true"></ion-icon>
+      <h3>No orders found</h3>
+      <p>Orders from customers will show up here.</p>
+    </div>
+    } }
+  </div>
+
+  @if (tab() === 'products') {
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="openAddModal()" aria-label="Add product">
+      <ion-icon name="add" aria-hidden="true"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+  }
+</ion-content>
+
+<!-- Add / edit product -->
+<ion-modal [isOpen]="isModalOpen()" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header class="ion-no-border">
+      <ion-toolbar>
+        <ion-title
+          >{{ isEditing() ? 'Edit product' : 'New product' }}</ion-title
+        >
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()" aria-label="Close">
+            <ion-icon
+              slot="icon-only"
+              name="close-outline"
+              aria-hidden="true"
+            ></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+      <ion-input
+        class="field"
+        fill="outline"
+        label="Product name"
+        labelPlacement="floating"
+        [(ngModel)]="currentProduct.item_name"
+      ></ion-input>
+
+      <ion-input
+        class="field"
+        fill="outline"
+        type="number"
+        inputmode="decimal"
+        label="Price (₱)"
+        labelPlacement="floating"
+        [(ngModel)]="currentProduct.item_price"
+      ></ion-input>
+
+      <ion-select
+        class="field"
+        fill="outline"
+        label="Category"
+        labelPlacement="floating"
+        interface="popover"
+        [(ngModel)]="categoryChoice"
+      >
+        @for (c of categories(); track c) {
+        <ion-select-option [value]="c">{{ c }}</ion-select-option>
+        }
+        <ion-select-option [value]="NEW_CATEGORY"
+          >+ New category…</ion-select-option
+        >
+      </ion-select>
+
+      @if (categoryChoice() === NEW_CATEGORY) {
+      <ion-input
+        class="field"
+        fill="outline"
+        label="New category name"
+        labelPlacement="floating"
+        placeholder="e.g. Gaming"
+        [(ngModel)]="newCategory"
+      ></ion-input>
+
+      @if (categoryHint(); as hint) {
+      <p class="category-hint" role="status">
+        <span>
+          @if (hint.exact) { That category already exists. } @else { Did you
+          mean “{{ hint.name }}”? }
+        </span>
+        <ion-button fill="clear" size="small" (click)="useCategory(hint.name)"
+          >Use {{ hint.name }}</ion-button
+        >
+      </p>
+      } }
+
+      <ion-textarea
+        class="field"
+        fill="outline"
+        label="Description"
+        labelPlacement="floating"
+        [autoGrow]="true"
+        rows="3"
+        [(ngModel)]="currentProduct.item_description"
+      ></ion-textarea>
+
+      <ion-select
+        class="field"
+        fill="outline"
+        label="Status"
+        labelPlacement="floating"
+        interface="popover"
+        [(ngModel)]="currentProduct.item_status"
+      >
+        <ion-select-option value="Approved">Approved</ion-select-option>
+        <ion-select-option value="Pending">Pending</ion-select-option>
+        <ion-select-option value="Archived">Archived</ion-select-option>
+      </ion-select>
+    </ion-content>
+
+    <ion-footer class="ion-no-border">
+      <ion-toolbar>
+        <div class="modal-actions">
+          <ion-button expand="block" (click)="saveProduct()">
+            {{ isEditing() ? 'Save changes' : 'Create product' }}
+          </ion-button>
+        </div>
+      </ion-toolbar>
+    </ion-footer>
+  </ng-template>
+</ion-modal>

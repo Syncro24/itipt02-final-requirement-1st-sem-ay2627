@@ -1,0 +1,88 @@
+/* Uses only Ionic theme variables, so it follows your app's colours. */
+.auth {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: 100%;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.card {
+  width: min(100%, 400px);
+  padding: 28px 24px 24px;
+  border-radius: 24px;
+  background: var(--ion-item-background, var(--ion-card-background, #fff));
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.08),
+    0 0 0 1px var(--ion-border-color, rgba(128, 128, 128, 0.2));
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background: rgba(var(--ion-color-primary-rgb), 0.12);
+  color: var(--ion-color-primary);
+  font-size: 28px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.sub {
+  margin: 6px 0 24px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ion-color-medium);
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(var(--ion-color-danger-rgb), 0.12);
+  color: var(--ion-color-danger);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+
+  ion-icon {
+    flex: none;
+    margin-top: 1px;
+    font-size: 18px;
+  }
+}
+
+.submit {
+  --border-radius: 14px;
+  height: 48px;
+  margin: 4px 0 0;
+  font-weight: 700;
+
+  ion-spinner {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.back {
+  margin: 0;
+  --color: var(--ion-color-medium);
+  font-weight: 600;
+}

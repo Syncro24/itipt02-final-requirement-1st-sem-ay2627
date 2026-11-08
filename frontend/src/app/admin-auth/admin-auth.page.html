@@ -1,0 +1,66 @@
+<ion-content [fullscreen]="true">
+  <main class="auth">
+    <section class="card" aria-labelledby="auth-title">
+      <span class="tile"><ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon></span>
+      <h1 id="auth-title">Admin sign in</h1>
+      <p class="sub">Manage your products and customer orders.</p>
+
+      <form (ngSubmit)="onAdminLogin()" novalidate>
+        <ion-input
+          class="field"
+          fill="outline"
+          type="email"
+          inputmode="email"
+          autocomplete="username"
+          label="Email"
+          labelPlacement="floating"
+          name="email"
+          [(ngModel)]="loginData.email"
+          required
+        ></ion-input>
+
+        <ion-input
+          class="field"
+          fill="outline"
+          autocomplete="current-password"
+          label="Password"
+          labelPlacement="floating"
+          name="password"
+          [type]="showPassword() ? 'text' : 'password'"
+          [(ngModel)]="loginData.password"
+          required
+        >
+          <ion-button
+            slot="end"
+            fill="clear"
+            type="button"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          >
+            <ion-icon slot="icon-only" [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'" aria-hidden="true"></ion-icon>
+          </ion-button>
+        </ion-input>
+
+        @if (error(); as message) {
+          <p class="error" role="alert">
+            <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+            <span>{{ message }}</span>
+          </p>
+        }
+
+        <ion-button class="submit" expand="block" type="submit" [disabled]="loading()">
+          @if (loading()) {
+            <ion-spinner name="crescent" aria-label="Signing in"></ion-spinner>
+          } @else {
+            Sign in
+          }
+        </ion-button>
+      </form>
+    </section>
+
+    <ion-button class="back" fill="clear" routerLink="/">
+      <ion-icon slot="start" name="arrow-back-outline" aria-hidden="true"></ion-icon>
+      Back to store
+    </ion-button>
+  </main>
+</ion-content>
