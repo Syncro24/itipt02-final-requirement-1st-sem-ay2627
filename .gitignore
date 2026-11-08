@@ -1,0 +1,7 @@
+
+# Python virtual environment
+backend/bin/
+backend/lib/
+backend/lib64
+backend/include/
+backend/pyvenv.cfg
