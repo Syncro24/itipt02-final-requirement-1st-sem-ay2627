@@ -292,3 +292,56 @@ ion-searchbar {
     margin: 0;
   }
 }
+
+.tile {
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.photo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  &__frame {
+    display: grid;
+    flex: none;
+    place-items: center;
+    align-content: center;
+    gap: 4px;
+    width: 112px;
+    height: 112px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: rgba(var(--ion-color-primary-rgb), 0.1);
+    color: var(--ion-color-primary);
+    font-size: 12px;
+    font-weight: 600;
+
+    ion-icon {
+      font-size: 32px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__actions {
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+
+    ion-button {
+      margin: 0;
+    }
+  }
+}

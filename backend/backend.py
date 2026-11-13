@@ -1,12 +1,21 @@
+# ./bin/python -m uvicorn backend:backend_data --reload --port 8000
+
+import base64
+import binascii
+import re
+import secrets
 from contextlib import contextmanager
+from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import List, Optional
+
 import bcrypt
 import mysql.connector
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-import re
 
 backend_data = FastAPI()
 
@@ -17,6 +26,13 @@ backend_data.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Product photos are saved here and served at /uploads/<file name>
+UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
+MAX_IMAGE_BYTES = 2 * 1024 * 1024
+
+backend_data.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 def get_db_connection():
@@ -53,6 +69,54 @@ def verify_password(password: str, stored_hash: str) -> bool:
     except ValueError:
         # stored value isn't a valid bcrypt hash (e.g. an old plaintext password)
         return False
+
+
+# ---------- Product photo helpers ----------
+def is_placeholder(name: str | None) -> bool:
+    """default.png / default.jpg (or nothing) means the product has no real photo."""
+    return not name or name.lower().startswith("default")
+
+
+def detect_extension(raw: bytes) -> str | None:
+    """Decides the type from the file's own bytes, never from its name."""
+    if raw.startswith(b"\xff\xd8\xff"):
+        return ".jpg"
+    if raw.startswith(b"\x89PNG\r\n\x1a\n"):
+        return ".png"
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        return ".webp"
+    return None
+
+
+def decode_image(data: str) -> tuple[str, bytes]:
+    """Accepts a data URL ("data:image/jpeg;base64,...") or bare base64 and returns (extension, bytes)."""
+    payload = data.split(",", 1)[1] if data.startswith("data:") and "," in data else data
+    try:
+        raw = base64.b64decode(payload, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="The image data is not valid")
+    if not raw:
+        raise HTTPException(status_code=400, detail="The image is empty")
+    if len(raw) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="The image is too large (max 2 MB)")
+    ext = detect_extension(raw)
+    if ext is None:
+        raise HTTPException(status_code=400, detail="Only JPG, PNG or WEBP images are allowed")
+    return ext, raw
+
+
+def new_image_name(ext: str) -> str:
+    """Upload date and time plus random characters, so two uploads never share a name."""
+    return f"{datetime.now():%Y%m%d_%H%M%S}_{secrets.token_hex(3)}{ext}"
+
+
+def delete_image_file(name: str | None) -> None:
+    """Removes a stored photo. Placeholders and anything outside uploads/ are left alone."""
+    if is_placeholder(name):
+        return
+    path = (UPLOAD_DIR / name).resolve()
+    if UPLOAD_DIR.resolve() in path.parents and path.is_file():
+        path.unlink(missing_ok=True)
 
 
 # ---------- Items (shoppers only see approved products) ----------
@@ -172,8 +236,6 @@ def login_user(credentials: LoginRequest):
 
 
 # ---------- Cart ----------
-# This is the version FastAPI was already running (the first definition of each
-# route wins). The duplicate block further down in the old file has been removed.
 class CartAddRequest(BaseModel):
     user_id: int
     item_id: int
@@ -190,7 +252,7 @@ def get_cart(user_id: int):
         # Only approved products: archived or pending ones can't be bought
         cursor.execute(
             """SELECT c.CART_ITEM_ID, c.ITEM_ID, c.QUANTITY,
-                      i.ITEM_NAME, i.ITEM_DESCRIPTION, i.ITEM_PRICE, i.ITEM_CATEGORY
+                      i.ITEM_NAME, i.ITEM_DESCRIPTION, i.ITEM_PRICE, i.ITEM_CATEGORY, i.ITEM_IMAGE
                FROM cart_items c
                JOIN items i ON i.ITEM_ID = c.ITEM_ID
                WHERE c.USER_ID = %s AND i.ITEM_STATUS = 'Approved'
@@ -297,31 +359,78 @@ def update_item(item_id: int, data: ItemCreateRequest):
         )
     return {"message": "Item updated successfully"}
 
+
 @backend_data.delete("/items/{item_id}")
 def archive_or_delete_item(item_id: int):
+    deleted_image = None
     with db_cursor(commit=True) as cursor:
-        cursor.execute("SELECT ITEM_STATUS FROM items WHERE ITEM_ID = %s", (item_id,))
+        cursor.execute("SELECT ITEM_STATUS, ITEM_IMAGE FROM items WHERE ITEM_ID = %s", (item_id,))
         item = cursor.fetchone()
-
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
 
         if item["ITEM_STATUS"] != "Archived":
-            # Step 1: soft delete (move to archive)
+            # Step 1: soft delete (move to archive; the photo stays)
             cursor.execute("UPDATE items SET ITEM_STATUS = 'Archived' WHERE ITEM_ID = %s", (item_id,))
-            return {"message": "Product moved to archive successfully", "status": "Archived"}
+            result = {"message": "Product moved to archive successfully", "status": "Archived"}
+        else:
+            # Step 2: permanent delete (only allowed once archived)
+            try:
+                cursor.execute("DELETE FROM cart_items WHERE ITEM_ID = %s", (item_id,))
+                cursor.execute("DELETE FROM items WHERE ITEM_ID = %s", (item_id,))
+            except mysql.connector.IntegrityError:
+                # Nothing is committed when an HTTPException leaves the block
+                raise HTTPException(
+                    status_code=409,
+                    detail="This product is part of past orders, so it can't be deleted. Leave it archived.",
+                )
+            deleted_image = item["ITEM_IMAGE"]
+            result = {"message": "Product permanently deleted", "status": "Deleted"}
 
-        # Step 2: permanent delete (only allowed once archived)
+    # The row is gone for good, so its photo can go too
+    if deleted_image:
+        delete_image_file(deleted_image)
+    return result
+
+
+# ---------- Admin: product photos ----------
+class ImageUpload(BaseModel):
+    image: str  # a data URL such as "data:image/jpeg;base64,/9j/4AAQ..."
+
+
+@backend_data.post("/items/{item_id}/image")
+def upload_item_image(item_id: int, data: ImageUpload):
+    ext, raw = decode_image(data.image)
+    name = new_image_name(ext)
+
+    with db_cursor(commit=True) as cursor:
+        cursor.execute("SELECT ITEM_IMAGE FROM items WHERE ITEM_ID = %s", (item_id,))
+        item = cursor.fetchone()
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        (UPLOAD_DIR / name).write_bytes(raw)
         try:
-            cursor.execute("DELETE FROM cart_items WHERE ITEM_ID = %s", (item_id,))
-            cursor.execute("DELETE FROM items WHERE ITEM_ID = %s", (item_id,))
-        except mysql.connector.IntegrityError:
-            # Nothing is committed when an HTTPException leaves the block
-            raise HTTPException(
-                status_code=409,
-                detail="This product is part of past orders, so it can't be deleted. Leave it archived.",
-            )
-        return {"message": "Product permanently deleted", "status": "Deleted"}
+            cursor.execute("UPDATE items SET ITEM_IMAGE = %s WHERE ITEM_ID = %s", (name, item_id))
+        except Exception:
+            (UPLOAD_DIR / name).unlink(missing_ok=True)
+            raise
+
+    delete_image_file(item["ITEM_IMAGE"])  # the photo it replaced
+    return {"message": "Image saved", "image": name}
+
+
+@backend_data.delete("/items/{item_id}/image")
+def remove_item_image(item_id: int):
+    with db_cursor(commit=True) as cursor:
+        cursor.execute("SELECT ITEM_IMAGE FROM items WHERE ITEM_ID = %s", (item_id,))
+        item = cursor.fetchone()
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        cursor.execute("UPDATE items SET ITEM_IMAGE = 'default.png' WHERE ITEM_ID = %s", (item_id,))
+
+    delete_image_file(item["ITEM_IMAGE"])
+    return {"message": "Image removed"}
 
 
 # ---------- Admin: orders ----------
@@ -404,7 +513,7 @@ def admin_login(credentials: LoginRequest):
     if user["USER_STATUS"] != "Active":
         raise HTTPException(status_code=403, detail="Account is not active")
 
-    if (user["USER_ROLE"] or "").lower() != "admin":
+    if (user["USER_ROLE"] or "").lower() not in ("admin", "super admin"):
         raise HTTPException(status_code=403, detail="Not an administrator")
 
     return {
@@ -414,6 +523,7 @@ def admin_login(credentials: LoginRequest):
         "name": f"{user['USER_FIRST_NAME']} {user['USER_LAST_NAME']}",
         "email": user["USER_EMAIL"],
     }
+
 
 # ---------- Orders (customer side) ----------
 class CheckoutRequest(BaseModel):
@@ -495,8 +605,8 @@ def place_order(data: CheckoutRequest):
 
     return {"message": "Order placed", "order_id": order_id, "total": total}
 
-#  Cancel Order (user side)
 
+# ---------- Cancel order (customer side) ----------
 class CancelOrderRequest(BaseModel):
     user_id: int
 

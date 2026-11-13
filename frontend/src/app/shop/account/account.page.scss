@@ -478,3 +478,34 @@ ion-content {
 .order__note {
   min-width: 0;
 }
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin: 0 16px;
+  padding: 32px 24px;
+  text-align: center;
+  border-radius: 16px;
+  background: var(--ion-item-background, var(--ion-card-background, #fff));
+  color: var(--ion-color-medium);
+
+  ion-icon {
+    margin-bottom: 8px;
+    font-size: 40px;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ion-text-color);
+  }
+
+  p {
+    margin: 0 0 12px;
+    max-width: 32ch;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+}

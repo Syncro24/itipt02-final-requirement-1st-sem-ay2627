@@ -39,9 +39,12 @@
           [attr.aria-label]="'Select ' + item.ITEM_NAME"
         ></ion-checkbox>
 
-        <span class="thumb"
-          ><ion-icon [name]="iconFor(item)" aria-hidden="true"></ion-icon
-        ></span>
+        <span class="thumb">
+          <ion-icon [name]="iconFor(item)" aria-hidden="true"></ion-icon>
+          @if (photoOf(item); as src) {
+          <img [src]="src" alt="" loading="lazy" (error)="hideImage($event)" />
+          }
+        </span>
 
         <div class="body">
           <h3>{{ item.ITEM_NAME }}</h3>

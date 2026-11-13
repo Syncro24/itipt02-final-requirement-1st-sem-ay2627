@@ -109,6 +109,20 @@ export class ApiService {
   }
 
   cancelMyOrder(orderId: number, userId: number): Observable<any> {
-  return this.http.put(`${this.apiUrl}/orders/${orderId}/cancel`, { user_id: userId });
-}
+    return this.http.put(`${this.apiUrl}/orders/${orderId}/cancel`, {
+      user_id: userId,
+    });
+  }
+
+  uploadItemImage(itemId: number, image: string): Observable<any>{
+    return this.http.post(`${this.apiUrl}/items/${itemId}/image`, {image});
+  }
+
+  removeItemImage(itemId: number): Observable<any>{
+    return this.http.delete(`${this.apiUrl}/items/${itemId}/image`);
+  }
+
+  imageUrl(name: string | null | undefined): string | null {
+    return !name || /^default/i.test(name) ? null : `${this.apiUrl}/uploads/${encodeURIComponent(name)}`;
+  }
 }

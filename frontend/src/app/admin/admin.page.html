@@ -90,12 +90,16 @@
     <ul class="grid">
       @for (item of visibleItems(); track item.ITEM_ID) {
       <li class="row">
-        <span class="tile"
-          ><ion-icon
+        <span class="tile">
+          @if (photoOf(item); as src) {
+          <img [src]="src" alt="" loading="lazy" />
+          } @else {
+          <ion-icon
             [name]="iconFor(item.ITEM_CATEGORY)"
             aria-hidden="true"
-          ></ion-icon
-        ></span>
+          ></ion-icon>
+          }
+        </span>
 
         <div class="info">
           <h3>{{ item.ITEM_NAME }}</h3>
@@ -294,6 +298,43 @@
       </ion-toolbar>
     </ion-header>
 
+    <div class="photo">
+      <div class="photo__frame">
+        @if (photoPreview(); as src) {
+        <img [src]="src" alt="Product photo preview" />
+        } @else {
+        <ion-icon name="image-outline" aria-hidden="true"></ion-icon>
+        <span>No photo</span>
+        }
+      </div>
+      <div class="photo__actions">
+        <input
+          #photo
+          type="file"
+          accept="image/*"
+          hidden
+          (change)="onPhoto($event)"
+        />
+        <ion-button fill="outline" size="small" (click)="photo.click()">
+          <ion-icon
+            slot="start"
+            name="camera-outline"
+            aria-hidden="true"
+          ></ion-icon>
+          {{ photoPreview() ? 'Change photo' : 'Choose photo' }}
+        </ion-button>
+        @if (photoPreview()) {
+        <ion-button
+          fill="clear"
+          size="small"
+          color="danger"
+          (click)="clearPhoto()"
+          >Remove photo</ion-button
+        >
+        }
+      </div>
+    </div>
+
     <ion-content class="ion-padding">
       <ion-input
         class="field"
@@ -378,8 +419,13 @@
     <ion-footer class="ion-no-border">
       <ion-toolbar>
         <div class="modal-actions">
-          <ion-button expand="block" (click)="saveProduct()">
-            {{ isEditing() ? 'Save changes' : 'Create product' }}
+          <ion-button
+            expand="block"
+            [disabled]="saving()"
+            (click)="saveProduct()"
+          >
+            {{ saving() ? 'Saving…' : (isEditing() ? 'Save changes' : 'Create
+            product') }}
           </ion-button>
         </div>
       </ion-toolbar>

@@ -293,3 +293,21 @@ ion-modal.detail-sheet {
     margin: 0;
   }
 }
+
+.brand-logo {
+  margin-inline: 16px 0;
+}
+
+.thumb,
+.detail__art {
+  position: relative;
+  overflow: hidden;
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}

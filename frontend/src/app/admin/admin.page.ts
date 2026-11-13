@@ -1,3 +1,4 @@
+import { fileToResizedDataUrl } from '../services/image-file';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { AdminRowSkeletonComponent } from '../shared/skeleton';
@@ -58,6 +59,7 @@ interface AdminItem {
   ITEM_CATEGORY: string | null;
   ITEM_DESCRIPTION: string | null;
   ITEM_STATUS: string;
+  ITEM_IMAGE: string;
 }
 
 interface AdminOrder {
@@ -165,6 +167,11 @@ export class AdminPage {
     'Approved',
     'Cancelled',
   ];
+
+  protected readonly photoPreview = signal<string | null>(null);
+  protected readonly saving = signal(false);
+  private photoData: string | null = null; // a new photo waiting to be uploaded
+  private removePhoto = false;
 
   protected readonly tab = signal<AdminTab>('products');
   protected readonly query = signal('');
@@ -340,6 +347,65 @@ export class AdminPage {
     else this.loadAllItems(done);
   }
 
+  protected photoOf(item: AdminItem): string | null {
+    return this.api.imageUrl(item.ITEM_IMAGE);
+  }
+
+  private resetPhoto(current: string | null ): void{
+    this.photoPreview.set(current);
+    this.photoData = null;
+    this.removePhoto = false;
+  }
+
+  protected async onPhoto(event: Event): Promise<void>{
+    const input = event.target as HTMLInputElement;
+    const  file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const dataUrl = await fileToResizedDataUrl(file);
+      this.photoData = dataUrl;
+      this.removePhoto = false;
+      this.photoPreview.set(dataUrl);
+    } catch (e: any) {
+      this.presentToast(e?.message ?? 'Could not read that image.', 'danger');
+    }
+  }
+
+  protected clearPhoto(): void{
+    this.photoData = null;
+    this.removePhoto = true;
+    this.photoPreview.set(null);
+  }
+
+  private failSave(err: any, fallback: string): void{
+    this.saving.set(false);
+    this.presentToast(err?.error?.detail ?? fallback, 'danger');
+  }
+
+   private syncPhoto(itemId: number, message: string): void {
+    const finish = (photoError?: string) => {
+      this.saving.set(false);
+      this.closeModal();
+      this.loadAllItems();
+      if (photoError) this.presentToast(`Product saved, but the photo failed: ${photoError}`, 'danger');
+      else this.presentToast(message, 'success');
+    };
+
+    if (this.photoData) {
+      this.api.uploadItemImage(itemId, this.photoData).subscribe({
+        next: () => finish(),
+        error: (err: any) => finish(err?.error?.detail ?? 'please try again.'),
+      });
+    } else if (this.removePhoto) {
+      this.api.removeItemImage(itemId).subscribe({
+        next: () => finish(),
+        error: () => finish('it could not be removed.'),
+      });
+    } else {
+      finish();
+    }
+  }
   // ---------- data ----------
 
   loadAllItems(done?: () => void): void {
@@ -419,6 +485,7 @@ export class AdminPage {
     this.currentProduct = emptyForm();
     this.categoryChoice.set(this.categories()[0] ?? this.NEW_CATEGORY);
     this.newCategory.set('');
+    this.resetPhoto(null);
     this.isModalOpen.set(true);
   }
 
@@ -438,6 +505,7 @@ export class AdminPage {
         this.NEW_CATEGORY,
     );
     this.newCategory.set('');
+    this.resetPhoto(this.photoOf(item));
     this.isModalOpen.set(true);
   }
 
@@ -445,12 +513,11 @@ export class AdminPage {
     this.isModalOpen.set(false);
   }
 
-  saveProduct(): void {
+    saveProduct(): void {
+    if (this.saving()) return;
+
     const category = this.resolveCategory();
-    const product: ProductForm = {
-      ...this.currentProduct,
-      item_category: category,
-    };
+    const product: ProductForm = { ...this.currentProduct, item_category: category };
     if (!product.item_name.trim() || Number(product.item_price) <= 0) {
       this.presentToast('Please provide a valid name and price.', 'danger');
       return;
@@ -460,32 +527,17 @@ export class AdminPage {
       return;
     }
 
+    this.saving.set(true);
     const id = this.selectedItemId();
     if (this.isEditing() && id !== null) {
       this.api.updateAdminItem(id, product).subscribe({
-        next: () => {
-          this.presentToast('Product updated successfully!', 'success');
-          this.closeModal();
-          this.loadAllItems();
-        },
-        error: (err: any) =>
-          this.presentToast(
-            err?.error?.detail ?? 'Failed to update product.',
-            'danger',
-          ),
+        next: () => this.syncPhoto(id, 'Product updated successfully!'),
+        error: (err: any) => this.failSave(err, 'Failed to update product.'),
       });
     } else {
       this.api.addAdminItem(product).subscribe({
-        next: () => {
-          this.presentToast('Product created successfully!', 'success');
-          this.closeModal();
-          this.loadAllItems();
-        },
-        error: (err: any) =>
-          this.presentToast(
-            err?.error?.detail ?? 'Failed to create product.',
-            'danger',
-          ),
+        next: (res: any) => this.syncPhoto(res.item_id, 'Product created successfully!'),
+        error: (err: any) => this.failSave(err, 'Failed to create product.'),
       });
     }
   }

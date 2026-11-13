@@ -280,4 +280,12 @@ export class SearchPage {
   changeDetailQty(delta: number) {
     this.detailQty.update((q) => Math.min(99, Math.max(1, q + delta)));
   }
+
+  photoOf(item:any): string | null {
+    return this.apiServices.imageUrl(item.ITEM_IMAGE);
+  }
+
+  hideImage(event: Event): void{
+    (event.target as HTMLElement).style.display = 'none';
+  }
 }

@@ -1,5 +1,13 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="title-bar">
+    <img
+      slot="start"
+      class="brand-logo"
+      src="assets/logo/logo-64.png"
+      width="32"
+      height="32"
+      alt="SyncroTech"
+    />
     <ion-title>Explore products</ion-title>
   </ion-toolbar>
   <ion-toolbar class="search-bar">
@@ -72,6 +80,9 @@
       >
         <div class="thumb" aria-hidden="true">
           <ion-icon [name]="iconFor(item)"></ion-icon>
+          @if (photoOf(item); as src) {
+          <img [src]="src" alt="" loading="lazy" (error)="hideImage($event)" />
+          }
         </div>
 
         <div class="card-body-wrapper">
@@ -155,6 +166,9 @@
         <div class="detail">
           <div class="detail__art" aria-hidden="true">
             <ion-icon [name]="iconFor(p)"></ion-icon>
+            @if (photoOf(p); as src) {
+            <img [src]="src" alt="" (error)="hideImage($event)" />
+            }
           </div>
 
           @if (p.ITEM_CATEGORY) {

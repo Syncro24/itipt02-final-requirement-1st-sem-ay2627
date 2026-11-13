@@ -30,6 +30,7 @@ interface CartRow {
   ITEM_NAME: string;
   ITEM_PRICE: number | string;
   ITEM_CATEGORY: string | null;
+  ITEM_IMAGE: string;
 }
 
 @Component({
@@ -75,6 +76,14 @@ export class CartPage {
       0,
     ),
   );
+  
+  protected photoOf(row: CartRow): string | null {
+    return this.api.imageUrl(row.ITEM_IMAGE);
+  }
+
+  protected hideImage(event: Event): void{
+    (event.target as HTMLElement).style.display = 'none';
+  }
 
   constructor(
     private api: ApiService,
@@ -247,4 +256,6 @@ export class CartPage {
     });
     await toast.present();
   }
+
+  
 }
